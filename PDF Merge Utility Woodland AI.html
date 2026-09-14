@@ -1,12 +1,25 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — PDF MERGE UTILITY
-  Build 1.10
+  Build 1.11
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop PDFs anywhere on the page, drag the rows to set the order, and combine them
   into a single PDF. Locked PDFs are unlocked automatically. The result can be
   compressed (None / Standard / Smaller) by recompressing the images inside it,
   which leaves text selectable and searchable.
+
+  1.11 changes:
+   - Fixed: dragging a row to reorder it did nothing. The page-wide "drop a file here"
+     listeners ran on the same drag and relabelled it a copy, while the row had declared
+     it a move. The browser saw the mismatch and refused the drop, so the reordering code
+     never ran. Those three listeners now stand aside while a row drag is in progress, so
+     they only handle files arriving from outside the page. Dragging is unchanged
+     otherwise. The dashed drop zone also no longer lights up while reordering.
+   - Up and down arrows. Each row now has a small up and a small down arrow in the grip
+     column, so the order can be changed by clicking as well as by dragging, and by
+     keyboard. The up arrow is disabled on the first row and the down arrow on the last.
+     The grip column widens to hold them; all ordering controls stay in that column,
+     away from the remove cross.
 
   1.10 changes:
    - The drag grip moves to its own narrow column at the start of each row, before the
@@ -264,8 +277,15 @@
   tr.trow.dragging{opacity:.4;}
   tr.trow.drag-over td{box-shadow:inset 0 2px 0 var(--pine);}
   td.c-drag{white-space:nowrap;}
-  .th-grip{width:44px;}
-  td.c-gripcell{width:44px;text-align:center;padding-left:10px;padding-right:0;}
+  .th-grip{width:72px;}
+  td.c-gripcell{width:72px;padding-left:10px;padding-right:0;}
+  .gripwrap{display:inline-flex;align-items:center;gap:6px;}
+  .ordbtns{display:inline-flex;flex-direction:column;gap:3px;}
+  .ordbtn{background:#fff;border:1px solid var(--line);border-radius:5px;color:var(--forest);
+    cursor:pointer;padding:0;width:20px;height:13px;display:inline-flex;align-items:center;justify-content:center;}
+  .ordbtn:hover:not(:disabled){background:#f4f7f5;border-color:var(--pine);}
+  .ordbtn:disabled{opacity:.35;cursor:default;color:var(--muted);}
+  .ordbtn svg{width:11px;height:11px;display:block;}
   .c-drag .remove{margin-left:14px;}
   .grip{display:inline-flex;align-items:center;justify-content:center;color:var(--muted);cursor:grab;
     padding:5px;border:1px solid var(--line);border-radius:6px;background:#fafcfb;vertical-align:middle;}
@@ -424,7 +444,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">PDF MERGE UTILITY</span>
-    <a class="help" title="PDF Merge Utility — Build 1.10">
+    <a class="help" title="PDF Merge Utility — Build 1.11">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -544,7 +564,7 @@
     </section>
   </main>
 
-  <footer><span class="build">Build 1.10</span></footer>
+  <footer><span class="build">Build 1.11</span></footer>
 </div>
 
 <div class="modal" id="pageModal" hidden>
@@ -911,11 +931,16 @@ else if (typeof exports === 'object')
   function fmtSize(b){ if(b>=1048576) return (b/1048576).toFixed(1)+" MB"; if(b>=1024) return Math.round(b/1024)+" KB"; return b+" B"; }
 
   // whole-page file drop
+  // These four listeners are for files arriving from outside the page only. While a row
+  // is being dragged to reorder it (dragId is set) they stand aside completely: the row
+  // marks the drag as a "move", and if these handlers then marked the same drag as a
+  // "copy" the browser would treat the two as incompatible and refuse the drop, which
+  // is what stopped reordering from working before 1.11.
   var dragDepth=0;
-  window.addEventListener("dragenter", function(e){ e.preventDefault(); dragDepth++; if(!busy) document.body.classList.add("drag-active"); });
-  window.addEventListener("dragover",  function(e){ e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="copy"; });
-  window.addEventListener("dragleave", function(e){ e.preventDefault(); dragDepth--; if(dragDepth<=0){ dragDepth=0; document.body.classList.remove("drag-active"); } });
-  window.addEventListener("drop", function(e){ e.preventDefault(); dragDepth=0; document.body.classList.remove("drag-active");
+  window.addEventListener("dragenter", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth++; if(!busy) document.body.classList.add("drag-active"); });
+  window.addEventListener("dragover",  function(e){ if(dragId!=null) return; e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="copy"; });
+  window.addEventListener("dragleave", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth--; if(dragDepth<=0){ dragDepth=0; document.body.classList.remove("drag-active"); } });
+  window.addEventListener("drop", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth=0; document.body.classList.remove("drag-active");
     if(busy) return; var dt=e.dataTransfer; if(dt && dt.files && dt.files.length) addFiles(dt.files); });
 
   drop.addEventListener("click", function(){ if(!busy) fileInput.click(); });
@@ -1241,6 +1266,17 @@ else if (typeof exports === 'object')
 
   function clearOver(){ Array.prototype.forEach.call(rows.querySelectorAll(".drag-over"), function(el){ el.classList.remove("drag-over"); }); }
 
+  // Shift one file one place up (-1) or down (+1). Same effect as dragging it there,
+  // so it clears any built result in the same way a drag-reorder does.
+  function moveItem(id, delta){
+    var from=items.findIndex(function(x){ return x.id===id; });
+    if(from<0) return;
+    var to=from+delta;
+    if(to<0 || to>=items.length) return;
+    var moved=items.splice(from,1)[0]; items.splice(to,0,moved);
+    mergedBlob=null; hideResult(); renderRows();
+  }
+
   function renderRows(){
     rows.innerHTML="";
     items.forEach(function(it, i){
@@ -1248,7 +1284,17 @@ else if (typeof exports === 'object')
       tr.className="trow"; tr.setAttribute("draggable","true"); tr.dataset.id=it.id;
 
       var g=document.createElement("td"); g.className="c-gripcell";
-      g.innerHTML='<span class="grip" title="Drag to reorder">'+gripIco()+'</span>';
+      var isFirst=(i===0), isLast=(i===items.length-1);
+      g.innerHTML='<span class="gripwrap">'+
+        '<span class="grip" title="Drag to reorder">'+gripIco()+'</span>'+
+        '<span class="ordbtns">'+
+          '<button class="ordbtn up" type="button"'+(isFirst?' disabled':'')+
+            ' title="'+(isFirst?'Already first':'Move up')+'" aria-label="Move up">'+upIco()+'</button>'+
+          '<button class="ordbtn dn" type="button"'+(isLast?' disabled':'')+
+            ' title="'+(isLast?'Already last':'Move down')+'" aria-label="Move down">'+dnIco()+'</button>'+
+        '</span></span>';
+      g.querySelector(".ordbtn.up").addEventListener("click", function(ev){ ev.stopPropagation(); moveItem(it.id,-1); });
+      g.querySelector(".ordbtn.dn").addEventListener("click", function(ev){ ev.stopPropagation(); moveItem(it.id, 1); });
       tr.appendChild(g);
       var o=document.createElement("td"); o.className="c-order"; o.textContent=(i+1); tr.appendChild(o);
 
@@ -1579,6 +1625,8 @@ else if (typeof exports === 'object')
 
   function pdfIco(){ return '<svg class="pdf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>'; }
   function gripIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>'; }
+  function upIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>'; }
+  function dnIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'; }
   function tickIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'; }
   function dlIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 20h14"/></svg>'; }
   function xIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'; }
