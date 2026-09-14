@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — PDF MERGE UTILITY
-  Build 1.11
+  Build 1.12
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop PDFs anywhere on the page, drag the rows to set the order, and combine them
   into a single PDF. Locked PDFs are unlocked automatically. The result can be
   compressed (None / Standard / Smaller) by recompressing the images inside it,
   which leaves text selectable and searchable.
+
+  1.12 changes:
+   - The merge order is now stated in words. A line above the table reads, for example,
+     "Merging 3 files top to bottom: Statement.pdf first, Receipt.pdf last." It updates
+     whenever the order or the page selection changes, so it always describes what the
+     Merge button would actually produce. It names only the files that will be merged
+     and counts only those, so a file that cannot be read, or that has no pages
+     selected, is not counted and cannot appear as first or last. The line is hidden
+     when fewer than two files would merge, since nothing is being ordered then.
 
   1.11 changes:
    - Fixed: dragging a row to reorder it did nothing. The page-wide "drop a file here"
@@ -402,6 +411,11 @@
   .remove svg{width:15px;height:15px;display:block;}
   .remove:hover{color:#8a2e22;}
   .btn-all:disabled{opacity:.5;cursor:default;}
+  .order-note{margin:16px 0 4px;font-size:12.5px;color:var(--muted);line-height:1.5;
+    display:flex;gap:8px;align-items:flex-start;}
+  .order-note[hidden]{display:none;}
+  .order-note svg{width:15px;height:15px;flex:0 0 auto;margin-top:2px;color:var(--pine);}
+  .order-note b{color:var(--ink);font-weight:600;}
   .empty-hint{color:var(--muted);font-size:14px;margin-top:16px;}
   .empty-hint[hidden]{display:none;}
   .merge-result{display:block;margin-top:22px;padding:18px 20px;
@@ -444,7 +458,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">PDF MERGE UTILITY</span>
-    <a class="help" title="PDF Merge Utility — Build 1.11">
+    <a class="help" title="PDF Merge Utility — Build 1.12">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -552,6 +566,11 @@
 
       <p class="working" id="working" hidden>Reading…</p>
 
+      <p class="order-note" id="orderNote" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".7" fill="currentColor" stroke="none"/></svg>
+        <span id="orderNoteText"></span>
+      </p>
+
       <table>
         <thead>
           <tr><th class="th-grip"></th><th>#</th><th>File name</th><th>Pages</th><th>Actions</th></tr>
@@ -564,7 +583,7 @@
     </section>
   </main>
 
-  <footer><span class="build">Build 1.11</span></footer>
+  <footer><span class="build">Build 1.12</span></footer>
 </div>
 
 <div class="modal" id="pageModal" hidden>
@@ -898,6 +917,7 @@ else if (typeof exports === 'object')
   var mergeBtnLabel=document.getElementById("mergeBtnLabel");
   var processedEl=document.getElementById("processed"), fileCountEl=document.getElementById("fileCount");
   var emptyHint=document.getElementById("emptyHint"), mergeResult=document.getElementById("mergeResult");
+  var orderNote=document.getElementById("orderNote"), orderNoteText=document.getElementById("orderNoteText");
   var mrName=document.getElementById("mrName"), mrSub=document.getElementById("mrSub");
   var mrPreview=document.getElementById("mrPreview"), mrDownload=document.getElementById("mrDownload");
   var mrcPills=document.getElementById("mrcPills"), mrcNoteText=document.getElementById("mrcNoteText");
@@ -1382,6 +1402,31 @@ else if (typeof exports === 'object')
       mergeBtnLabel.textContent = "Merge PDFs";
     }
     emptyHint.hidden = !(n>0 && ok<1);
+    updateOrderNote();
+  }
+
+  // Plain-English statement of what the Merge button would produce. It uses exactly the
+  // same test as doMerge for deciding which files take part, so the two can never
+  // disagree: a file that cannot be read, or that has no pages selected, is skipped by
+  // the merge and is likewise left out of this sentence and of its count. Built from
+  // text nodes rather than markup so that a file name containing < or & is safe.
+  function updateOrderNote(){
+    var usable=items.filter(function(x){ return x.bytes && x.pages!=null && countSel(x)>0; });
+    orderNoteText.textContent="";
+    if(usable.length<2){ orderNote.hidden=true; return; }   // nothing is being ordered
+    function txt(s){ return document.createTextNode(s); }
+    function nameEl(it){
+      var b=document.createElement("b");
+      b.textContent = it.name.length>40 ? it.name.slice(0,39)+"…" : it.name;
+      b.title=it.name;                                      // long names truncate; hover shows it in full
+      return b;
+    }
+    orderNoteText.appendChild(txt("Merging "+usable.length+" files top to bottom: "));
+    orderNoteText.appendChild(nameEl(usable[0]));
+    orderNoteText.appendChild(txt(usable.length===2 ? " first, then " : " first, "));
+    orderNoteText.appendChild(nameEl(usable[usable.length-1]));
+    orderNoteText.appendChild(txt(usable.length===2 ? "." : " last."));
+    orderNote.hidden=false;
   }
 
   function hideResult(){ mergeResult.hidden=true; masterBytes=null; level="none"; paintPills(); }
