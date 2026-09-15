@@ -1,13 +1,36 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — BANK STATEMENT UTILITY
-  Build 1.15
+  Build 1.16
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop bank-statement PDFs anywhere on the page; each page WITHOUT the phrase
   "BALANCE CARRIED FORWARD" is removed, and a trimmed copy (same filename) is returned.
 
-  1.15 changes:
-   - Compression is now reachable with a single file. The action button appears once one
+  1.16 changes:
+   - Fixed: dragging a row to reorder it did nothing. The page-wide "drop a file here"
+     listeners ran on the same drag and relabelled it a copy, while the row had declared
+     it a move. The browser saw the mismatch and refused the drop, so the reordering code
+     never ran. Those four listeners now stand aside while a row drag is in progress, so
+     they only handle files arriving from outside the page. The dashed drop zone also no
+     longer lights up while reordering.
+   - Ordering controls moved from the last column to a new far-left column, matching the
+     PDF Merge and JPG to PDF utilities: the drag grip now sits there with a small up and
+     a small down arrow beside it, so the order can be changed by clicking as well as by
+     dragging, and by keyboard. The up arrow is disabled on the first row and the down
+     arrow on the last. Files that cannot take part in a merge still show a dash instead
+     of controls, as before.
+   - Added a "#" column showing each file's position, matching the other two utilities.
+   - The merge order is now stated in words. A line above the table reads, for example,
+     "Merging 3 files top to bottom: January.pdf first, March.pdf last." It updates
+     whenever the order changes, so it always describes what the Merge button would
+     actually produce. It names and counts only the files that can take part, so a file
+     with nothing usable in it cannot appear as first or last. The line is hidden when
+     fewer than two files would merge.
+   - The build number is now visible on the page: in a bottom-right footer and in the
+     Help tooltip, matching the other two utilities. The footer styling had been added
+     previously but nothing was using it.
+
+  1.15 changes:   - Compression is now reachable with a single file. The action button appears once one
      file is ready and reads "Compress"; with two or more files it reads "Merge PDFs" as
      before. With one file the result keeps that file's own name rather than gaining a
      "(merged)" suffix, and the summary line omits the file count.
@@ -200,6 +223,22 @@
   tr.trow.dragging{opacity:.4;}
   tr.trow.drag-over td{box-shadow:inset 0 2px 0 var(--pine);}
   td.c-drag{white-space:nowrap;}
+  .th-grip{width:72px;}
+  td.c-gripcell{width:72px;padding-left:10px;padding-right:0;}
+  .gripwrap{display:inline-flex;align-items:center;gap:6px;}
+  .ordbtns{display:inline-flex;flex-direction:column;gap:3px;}
+  .ordbtn{background:#fff;border:1px solid var(--line);border-radius:5px;color:var(--forest);
+    cursor:pointer;padding:0;width:20px;height:13px;display:inline-flex;align-items:center;justify-content:center;}
+  .ordbtn:hover:not(:disabled){background:#f4f7f5;border-color:var(--pine);}
+  .ordbtn:disabled{opacity:.35;cursor:default;color:var(--muted);}
+  .ordbtn svg{width:11px;height:11px;display:block;}
+  .c-order{width:52px;color:var(--muted);font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-weight:600;font-variant-numeric:tabular-nums;text-align:left!important;}
+  .order-note{margin:16px 0 4px;font-size:12.5px;color:var(--muted);line-height:1.5;
+    display:flex;gap:8px;align-items:flex-start;}
+  .order-note[hidden]{display:none;}
+  .order-note svg{width:15px;height:15px;flex:0 0 auto;margin-top:2px;color:var(--pine);}
+  .order-note b{color:var(--ink);font-weight:600;}
   .grip{display:inline-flex;align-items:center;justify-content:center;color:var(--muted);cursor:grab;
     padding:5px;border:1px solid var(--line);border-radius:6px;background:#fafcfb;vertical-align:middle;}
   .grip:active{cursor:grabbing;}
@@ -257,7 +296,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">BANK STATEMENT UTILITY</span>
-    <a class="help" title="Help">
+    <a class="help" title="Bank Statement Utility — Build 1.16">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -370,14 +409,21 @@
 
       <p class="working" id="working" hidden>Reading…</p>
 
+      <p class="order-note" id="orderNote" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".7" fill="currentColor" stroke="none"/></svg>
+        <span id="orderNoteText"></span>
+      </p>
+
       <table>
         <thead>
-          <tr><th>File name</th><th>Kept pages</th><th>Removed pages</th><th>Preview</th><th>Download</th><th>Reorder</th></tr>
+          <tr><th class="th-grip"></th><th>#</th><th>File name</th><th>Kept pages</th><th>Removed pages</th><th>Preview</th><th>Download</th></tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>
     </section>
   </main>
+
+  <footer><span class="build">Build 1.16</span></footer>
 </div>
 
 <!-- pdf.js (reads text to find the phrase) -->
@@ -661,6 +707,7 @@ else if (typeof exports === 'object')
   var items = [];
   var uid = 0;
   var dragId = null;
+  var orderNote = document.getElementById("orderNote"), orderNoteText = document.getElementById("orderNoteText");
 
   // ---- merge / compression state ----
   // masterBytes is the untouched merged file. Every level is produced FROM the
@@ -715,10 +762,16 @@ else if (typeof exports === 'object')
 
   // whole-page drop + highlight
   var dragDepth = 0;
-  window.addEventListener("dragenter", function(e){ e.preventDefault(); dragDepth++; if(!busy) document.body.classList.add("drag-active"); });
-  window.addEventListener("dragover",  function(e){ e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect = "copy"; });
-  window.addEventListener("dragleave", function(e){ e.preventDefault(); dragDepth--; if(dragDepth<=0){ dragDepth=0; document.body.classList.remove("drag-active"); } });
+  // These four listeners are for files arriving from outside the page only. While a row
+  // is being dragged to reorder it (dragId is set) they stand aside completely: the row
+  // marks the drag as a "move", and if these handlers then marked the same drag as a
+  // "copy" the browser would treat the two as incompatible and refuse the drop, which
+  // is what stopped reordering from working before 1.16.
+  window.addEventListener("dragenter", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth++; if(!busy) document.body.classList.add("drag-active"); });
+  window.addEventListener("dragover",  function(e){ if(dragId!=null) return; e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect = "copy"; });
+  window.addEventListener("dragleave", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth--; if(dragDepth<=0){ dragDepth=0; document.body.classList.remove("drag-active"); } });
   window.addEventListener("drop", function(e){
+    if(dragId!=null) return;
     e.preventDefault(); dragDepth=0; document.body.classList.remove("drag-active");
     if(busy) return;
     var dt = e.dataTransfer;
@@ -842,18 +895,81 @@ else if (typeof exports === 'object')
       '<text x="12" y="18" font-size="5" font-family="sans-serif" fill="currentColor" stroke="none" text-anchor="middle">PDF</text></svg>';
   }
   function gripIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>'; }
+  function upIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>'; }
+  function dnIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'; }
 
   function clearOver(){ Array.prototype.forEach.call(rows.querySelectorAll(".drag-over"), function(el){ el.classList.remove("drag-over"); }); }
 
   function renderRows(){
     rows.innerHTML = "";
-    items.forEach(function(res){ rows.appendChild(buildRow(res)); });
+    items.forEach(function(res, i){ rows.appendChild(buildRow(res, i)); });
+    updateOrderNote();
   }
 
-  function buildRow(res){
+  // Shift one file one place up (-1) or down (+1). Same effect as dragging it there,
+  // so it clears any built result in the same way a drag-reorder does.
+  function moveItem(id, delta){
+    var from = items.findIndex(function(x){ return x.id === id; });
+    if(from < 0) return;
+    var to = from + delta;
+    if(to < 0 || to >= items.length) return;
+    var moved = items.splice(from,1)[0]; items.splice(to,0,moved);
+    hideResult(); renderRows();
+  }
+
+  // Plain-English statement of what the Merge button would produce. It uses exactly the
+  // same test as doMerge for deciding which files take part, so the two can never
+  // disagree: a file with nothing usable in it is skipped by the merge and is likewise
+  // left out of this sentence and of its count. Built from text nodes rather than markup
+  // so that a file name containing < or & is safe.
+  function updateOrderNote(){
+    var usable = items.filter(function(x){ return x.bytes && x.bytes.length; });
+    orderNoteText.textContent = "";
+    if(usable.length < 2){ orderNote.hidden = true; return; }   // nothing is being ordered
+    function txt(s){ return document.createTextNode(s); }
+    function nameEl(it){
+      var b = document.createElement("b");
+      b.textContent = it.name.length > 40 ? it.name.slice(0,39) + "…" : it.name;
+      b.title = it.name;                                        // long names truncate; hover shows it in full
+      return b;
+    }
+    orderNoteText.appendChild(txt("Merging " + usable.length + " files top to bottom: "));
+    orderNoteText.appendChild(nameEl(usable[0]));
+    orderNoteText.appendChild(txt(usable.length === 2 ? " first, then " : " first, "));
+    orderNoteText.appendChild(nameEl(usable[usable.length-1]));
+    orderNoteText.appendChild(txt(usable.length === 2 ? "." : " last."));
+    orderNote.hidden = false;
+  }
+
+  function buildRow(res, i){
     var tr = document.createElement("tr");
     tr.className = "trow" + (res.state === "warn" ? " state-warn" : res.state === "error" ? " state-error" : "");
     tr.dataset.id = res.id;
+
+    // ordering controls — far left, matching the other utilities
+    var gripTd = document.createElement("td");
+    gripTd.className = "c-gripcell";
+    var mergeable = !!(res.bytes && res.bytes.length);
+    if(mergeable){
+      var isFirst = (i === 0), isLast = (i === items.length - 1);
+      gripTd.innerHTML = '<span class="gripwrap">' +
+        '<span class="grip" title="Drag to set the merge order">' + gripIco() + '</span>' +
+        '<span class="ordbtns">' +
+          '<button class="ordbtn up" type="button"' + (isFirst ? ' disabled' : '') +
+            ' title="' + (isFirst ? 'Already first' : 'Move up') + '" aria-label="Move up">' + upIco() + '</button>' +
+          '<button class="ordbtn dn" type="button"' + (isLast ? ' disabled' : '') +
+            ' title="' + (isLast ? 'Already last' : 'Move down') + '" aria-label="Move down">' + dnIco() + '</button>' +
+        '</span></span>';
+      gripTd.querySelector(".ordbtn.up").addEventListener("click", function(ev){ ev.stopPropagation(); moveItem(res.id,-1); });
+      gripTd.querySelector(".ordbtn.dn").addEventListener("click", function(ev){ ev.stopPropagation(); moveItem(res.id, 1); });
+    } else {
+      gripTd.innerHTML = '<span class="c-dash">—</span>';
+    }
+    tr.appendChild(gripTd);
+
+    var orderTd = document.createElement("td");
+    orderTd.className = "c-order"; orderTd.textContent = (i + 1);
+    tr.appendChild(orderTd);
 
     var nameTd = document.createElement("td");
     nameTd.className = "c-name";
@@ -880,7 +996,7 @@ else if (typeof exports === 'object')
 
     if(res.state === "error" || (res.state === "warn" && res.total == null)){
       var msg = document.createElement("td");
-      msg.className = "msg"; msg.colSpan = 5;
+      msg.className = "msg"; msg.colSpan = 4;   // grip + # + name, then the 4 remaining columns
       msg.textContent = res.note || "";
       tr.appendChild(msg);
       return tr;
@@ -920,11 +1036,9 @@ else if (typeof exports === 'object')
     } else { dlTd.innerHTML = '<span class="c-dash">—</span>'; }
     tr.appendChild(dlTd);
 
-    // reorder handle — only for files that can take part in a merge
-    var dragTd = document.createElement("td");
-    dragTd.className = "c-drag";
-    if(res.bytes && res.bytes.length){
-      dragTd.innerHTML = '<span class="grip" title="Drag to set the merge order">' + gripIco() + '</span>';
+    // row dragging — only for files that can take part in a merge. The grip and arrows
+    // themselves now live in the far-left column built at the top of this function.
+    if(mergeable){
       tr.setAttribute("draggable","true");
       tr.addEventListener("dragstart", function(e){
         if(busy){ e.preventDefault(); return; }
@@ -946,10 +1060,7 @@ else if (typeof exports === 'object')
         var moved = items.splice(from,1)[0]; items.splice(to,0,moved);
         hideResult(); renderRows();
       });
-    } else {
-      dragTd.innerHTML = '<span class="c-dash">—</span>';
     }
-    tr.appendChild(dragTd);
 
     return tr;
   }
