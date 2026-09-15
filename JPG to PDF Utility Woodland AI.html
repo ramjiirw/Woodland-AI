@@ -1,11 +1,34 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — JPG TO PDF UTILITY
+  Build 1.0
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop JPG images anywhere on the page, drag the rows to set the order, and combine
   them into a single PDF you can download. Each image becomes one A4 page — the page
   auto-rotates to landscape for wide images and portrait for tall ones, and the image
   is scaled to fit with a small margin.
+
+  1.0 changes:
+   - First numbered build. Build number now shown in this header, in the Help tooltip
+     and in the page footer, matching the PDF Merge Utility.
+   - Fixed: dragging a row to reorder it did nothing. The page-wide "drop a file here"
+     listeners ran on the same drag and relabelled it a copy, while the row had declared
+     it a move. The browser saw the mismatch and refused the drop, so the reordering code
+     never ran. Those four listeners now stand aside while a row drag is in progress, so
+     they only handle files arriving from outside the page. The dashed drop zone also no
+     longer lights up while reordering.
+   - Ordering controls moved to a new far-left column, matching the PDF Merge Utility:
+     the drag grip now sits there with a small up and a small down arrow beside it, so
+     the order can be changed by clicking as well as by dragging, and by keyboard. The
+     up arrow is disabled on the first row and the down arrow on the last. The remove
+     cross moves to its own Actions column on the right, keeping ordering away from the
+     destructive control.
+   - The page order is now stated in words. A line above the table reads, for example,
+     "Images become pages top to bottom: beach.jpg first, sunset.jpg last." It updates
+     whenever the order changes, so it always describes what the button would actually
+     produce. It names and counts only the images that can be read, so an unreadable
+     image cannot appear as first or last. The line is hidden when fewer than two
+     images would be used.
 -->
 <html lang="en-GB">
 <head>
@@ -178,7 +201,16 @@
   tr.trow{cursor:default;}
   tr.trow.dragging{opacity:.4;}
   tr.trow.drag-over td{box-shadow:inset 0 2px 0 var(--pine);}
-  td.c-drag{white-space:nowrap;}
+  td.c-drag{white-space:nowrap;text-align:right;}
+  .th-grip{width:72px;}
+  td.c-gripcell{width:72px;padding-left:10px;padding-right:0;}
+  .gripwrap{display:inline-flex;align-items:center;gap:6px;}
+  .ordbtns{display:inline-flex;flex-direction:column;gap:3px;}
+  .ordbtn{background:#fff;border:1px solid var(--line);border-radius:5px;color:var(--forest);
+    cursor:pointer;padding:0;width:20px;height:13px;display:inline-flex;align-items:center;justify-content:center;}
+  .ordbtn:hover:not(:disabled){background:#f4f7f5;border-color:var(--pine);}
+  .ordbtn:disabled{opacity:.35;cursor:default;color:var(--muted);}
+  .ordbtn svg{width:11px;height:11px;display:block;}
   .grip{display:inline-flex;align-items:center;justify-content:center;color:var(--muted);cursor:grab;
     padding:5px;border:1px solid var(--line);border-radius:6px;background:#fafcfb;vertical-align:middle;}
   .grip:active{cursor:grabbing;}
@@ -187,8 +219,15 @@
   .remove svg{width:15px;height:15px;display:block;}
   .remove:hover{color:#8a2e22;}
   .btn-all:disabled{opacity:.5;cursor:default;}
+  .order-note{margin:16px 0 4px;font-size:12.5px;color:var(--muted);line-height:1.5;
+    display:flex;gap:8px;align-items:flex-start;}
+  .order-note[hidden]{display:none;}
+  .order-note svg{width:15px;height:15px;flex:0 0 auto;margin-top:2px;color:var(--pine);}
+  .order-note b{color:var(--ink);font-weight:600;}
   .empty-hint{color:var(--muted);font-size:14px;margin-top:16px;}
   .empty-hint[hidden]{display:none;}
+  footer{max-width:1200px;margin:0 auto;padding:0 32px 26px;text-align:right;}
+  footer .build{font-size:12px;color:var(--muted);letter-spacing:.03em;}
   .merge-result{display:block;margin-top:22px;padding:18px 20px;
     border:1px solid #bfe0d1;background:#f1f7f3;border-radius:12px;}
   .merge-result[hidden]{display:none;}
@@ -229,7 +268,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">JPG TO PDF UTILITY</span>
-    <a class="help" title="Help">
+    <a class="help" title="JPG to PDF Utility — Build 1.0">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -337,9 +376,14 @@
 
       <p class="working" id="working" hidden>Reading…</p>
 
+      <p class="order-note" id="orderNote" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".7" fill="currentColor" stroke="none"/></svg>
+        <span id="orderNoteText"></span>
+      </p>
+
       <table>
         <thead>
-          <tr><th>#</th><th>File name</th><th>Dimensions</th><th>Reorder</th></tr>
+          <tr><th class="th-grip"></th><th>#</th><th>File name</th><th>Dimensions</th><th>Actions</th></tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>
@@ -348,6 +392,8 @@
 
     </section>
   </main>
+
+  <footer><span class="build">Build 1.0</span></footer>
 </div>
 
 <!-- pdf-lib (merges the pages) -->
@@ -550,6 +596,7 @@ else if (typeof exports === 'object')
   var working=document.getElementById("working");
   var mergeBtn=document.getElementById("mergeBtn"), clearBtn=document.getElementById("clearAll");
   var processedEl=document.getElementById("processed"), fileCountEl=document.getElementById("fileCount");
+  var orderNote=document.getElementById("orderNote"), orderNoteText=document.getElementById("orderNoteText");
   var emptyHint=document.getElementById("emptyHint"), mergeResult=document.getElementById("mergeResult");
   var mrName=document.getElementById("mrName"), mrSub=document.getElementById("mrSub");
   var mrPreview=document.getElementById("mrPreview"), mrDownload=document.getElementById("mrDownload");
@@ -574,10 +621,15 @@ else if (typeof exports === 'object')
 
   // whole-page file drop
   var dragDepth=0;
-  window.addEventListener("dragenter", function(e){ e.preventDefault(); dragDepth++; if(!busy) document.body.classList.add("drag-active"); });
-  window.addEventListener("dragover",  function(e){ e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="copy"; });
-  window.addEventListener("dragleave", function(e){ e.preventDefault(); dragDepth--; if(dragDepth<=0){ dragDepth=0; document.body.classList.remove("drag-active"); } });
-  window.addEventListener("drop", function(e){ e.preventDefault(); dragDepth=0; document.body.classList.remove("drag-active");
+  // These four listeners are for files arriving from outside the page only. While a row
+  // is being dragged to reorder it (dragId is set) they stand aside completely: the row
+  // marks the drag as a "move", and if these handlers then marked the same drag as a
+  // "copy" the browser would treat the two as incompatible and refuse the drop, which
+  // is what stopped reordering from working before 1.0.
+  window.addEventListener("dragenter", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth++; if(!busy) document.body.classList.add("drag-active"); });
+  window.addEventListener("dragover",  function(e){ if(dragId!=null) return; e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="copy"; });
+  window.addEventListener("dragleave", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth--; if(dragDepth<=0){ dragDepth=0; document.body.classList.remove("drag-active"); } });
+  window.addEventListener("drop", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth=0; document.body.classList.remove("drag-active");
     if(busy) return; var dt=e.dataTransfer; if(dt && dt.files && dt.files.length) addFiles(dt.files); });
 
   // Clicking the zone selects it, ready for Ctrl+V. Nothing here opens the file
@@ -685,11 +737,60 @@ else if (typeof exports === 'object')
 
   function clearOver(){ Array.prototype.forEach.call(rows.querySelectorAll(".drag-over"), function(el){ el.classList.remove("drag-over"); }); }
 
+  // Shift one image one place up (-1) or down (+1). Same effect as dragging it there,
+  // so it clears any built result in the same way a drag-reorder does.
+  function moveItem(id, delta){
+    var from=items.findIndex(function(x){ return x.id===id; });
+    if(from<0) return;
+    var to=from+delta;
+    if(to<0 || to>=items.length) return;
+    var moved=items.splice(from,1)[0]; items.splice(to,0,moved);
+    mergedBlob=null; hideResult(); renderRows();
+  }
+
+  // Plain-English statement of what the button would produce. It uses exactly the same
+  // test as buildPdf for deciding which images take part, so the two can never disagree:
+  // an image that cannot be read is skipped by the build and is likewise left out of
+  // this sentence and of its count. Built from text nodes rather than markup so that a
+  // file name containing < or & is safe.
+  function updateOrderNote(){
+    var usable=items.filter(function(x){ return x.bytes && x.w!=null; });
+    orderNoteText.textContent="";
+    if(usable.length<2){ orderNote.hidden=true; return; }   // nothing is being ordered
+    function txt(s){ return document.createTextNode(s); }
+    function nameEl(it){
+      var b=document.createElement("b");
+      b.textContent = it.name.length>40 ? it.name.slice(0,39)+"…" : it.name;
+      b.title=it.name;                                      // long names truncate; hover shows it in full
+      return b;
+    }
+    orderNoteText.appendChild(txt("Images become pages top to bottom: "));
+    orderNoteText.appendChild(nameEl(usable[0]));
+    orderNoteText.appendChild(txt(usable.length===2 ? " first, then " : " first, "));
+    orderNoteText.appendChild(nameEl(usable[usable.length-1]));
+    orderNoteText.appendChild(txt(usable.length===2 ? "." : " last."));
+    orderNote.hidden=false;
+  }
+
   function renderRows(){
     rows.innerHTML="";
     items.forEach(function(it, i){
       var tr=document.createElement("tr");
       tr.className="trow"; tr.setAttribute("draggable","true"); tr.dataset.id=it.id;
+
+      var g=document.createElement("td"); g.className="c-gripcell";
+      var isFirst=(i===0), isLast=(i===items.length-1);
+      g.innerHTML='<span class="gripwrap">'+
+        '<span class="grip" title="Drag to reorder">'+gripIco()+'</span>'+
+        '<span class="ordbtns">'+
+          '<button class="ordbtn up" type="button"'+(isFirst?' disabled':'')+
+            ' title="'+(isFirst?'Already first':'Move up')+'" aria-label="Move up">'+upIco()+'</button>'+
+          '<button class="ordbtn dn" type="button"'+(isLast?' disabled':'')+
+            ' title="'+(isLast?'Already last':'Move down')+'" aria-label="Move down">'+dnIco()+'</button>'+
+        '</span></span>';
+      g.querySelector(".ordbtn.up").addEventListener("click", function(ev){ ev.stopPropagation(); moveItem(it.id,-1); });
+      g.querySelector(".ordbtn.dn").addEventListener("click", function(ev){ ev.stopPropagation(); moveItem(it.id, 1); });
+      tr.appendChild(g);
 
       var o=document.createElement("td"); o.className="c-order"; o.textContent=(i+1); tr.appendChild(o);
 
@@ -702,7 +803,7 @@ else if (typeof exports === 'object')
       tr.appendChild(p);
 
       var d=document.createElement("td"); d.className="c-drag";
-      d.innerHTML='<span class="grip" title="Drag to reorder">'+gripIco()+'</span><button class="remove" type="button" title="Remove" aria-label="Remove">'+xIco()+'</button>';
+      d.innerHTML='<button class="remove" type="button" title="Remove" aria-label="Remove">'+xIco()+'</button>';
       d.querySelector(".remove").addEventListener("click", function(ev){ ev.stopPropagation(); items=items.filter(function(x){ return x.id!==it.id; }); mergedBlob=null; hideResult(); renderRows(); });
       tr.appendChild(d);
 
@@ -728,6 +829,7 @@ else if (typeof exports === 'object')
     fileCountEl.textContent = n + (n===1 ? " file added" : " files added");
     mergeBtn.disabled = ok<1;
     emptyHint.hidden = !(n>0 && ok<1);
+    updateOrderNote();
   }
 
   function hideResult(){ mergeResult.hidden=true; level="none"; masterSize=0; paintPills(); }
@@ -862,6 +964,8 @@ else if (typeof exports === 'object')
   }
 
   function pdfIco(){ return '<svg class="pdf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>'; }
+  function upIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>'; }
+  function dnIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'; }
   function imgIco(){ return '<svg class="pdf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>'; }
   function gripIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>'; }
   function xIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'; }
