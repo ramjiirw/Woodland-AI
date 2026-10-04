@@ -1,13 +1,23 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — PDF MERGE UTILITY
-  Build 2.6
+  Build 2.7
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop PDFs, JPGs and PNGs anywhere on the page (or paste a screenshot with Ctrl+V),
   drag the rows to set the order, and combine them into a single PDF. Each image
   becomes its own A4 page. Locked PDFs are unlocked automatically. The result can be
   compressed (None / Standard / Smaller) by recompressing the images inside it,
   which leaves text selectable and searchable.
+
+  2.7 changes:
+   - Compact layout once files are added. As soon as there is at least one file in the
+     list, the large banner shrinks to a slim strip and the step 1 panel shrinks to a
+     single line ("Drop more files anywhere on the page - Ctrl+V to paste - choose
+     files"), pulling "2. Order & merge" up the page. Clear returns to the full layout.
+     Files can still be dropped anywhere on the page, pasted, or chosen as before.
+   - After files are added (dropped, chosen or pasted), the page glides down so that
+     "2. Order & merge" is at the top of the window. If it is already in view near the
+     top, the page stays where it is.
 
   2.6 changes:
    - The rotate and magnifier buttons are now always visible, on every tile in Preview &
@@ -382,6 +392,19 @@
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 
+  /* ---------- compact layout once files are in the list ---------- */
+  .drop .compact-line{display:none;margin:0;font-size:14px;color:var(--text);}
+  .drop .compact-line b{color:var(--ink);font-weight:600;}
+  body.compact .hero{padding-top:16px;padding-bottom:16px;}
+  body.compact .hero h1{font-size:24px;margin:0;}
+  body.compact .hero p{display:none;}
+  body.compact .upload{display:block;padding:12px 16px;}
+  body.compact .upload-left{display:none;}
+  body.compact .drop{min-height:0;flex-direction:row;gap:12px;padding:12px 18px;}
+  body.compact .drop .up{width:22px;height:22px;margin:0;}
+  body.compact .drop .big,body.compact .drop .small{display:none;}
+  body.compact .drop .compact-line{display:block;}
+
   /* merge-specific */
   .c-order{width:52px;color:var(--muted);font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
     font-weight:600;font-variant-numeric:tabular-nums;text-align:left!important;}
@@ -655,7 +678,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">PDF MERGE UTILITY</span>
-    <a class="help" id="helpBtn" href="#" role="button" title="PDF Merge Utility — Build 2.6">
+    <a class="help" id="helpBtn" href="#" role="button" title="PDF Merge Utility — Build 2.7">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -698,6 +721,7 @@
         <svg class="up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V5"/><path d="M8 9l4-4 4 4"/><path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
         <p class="big">Drop PDFs or images here</p>
         <p class="small">PDF, JPG or PNG · Ctrl+V to paste a screenshot · or <span class="browse">choose files</span></p>
+        <p class="compact-line"><b>Drop more files anywhere on the page</b> · Ctrl+V to paste · or <span class="browse">choose files</span></p>
         <input type="file" id="file" accept="application/pdf,.pdf,image/jpeg,image/png,.jpg,.jpeg,.png" multiple>
       </div>
     </section>
@@ -815,7 +839,7 @@
     </section>
   </main>
 
-  <footer><span class="build">Build 2.6</span></footer>
+  <footer><span class="build">Build 2.7</span></footer>
 </div>
 
 <div class="modal help-modal" id="helpModal" hidden>
@@ -824,7 +848,7 @@
     <div class="modal-head">
       <span>
         <span class="pm-title" id="helpTitle">How to use the PDF Merge Utility</span>
-        <span class="pm-sub" id="helpSub">Build 2.6</span>
+        <span class="pm-sub" id="helpSub">Build 2.7</span>
       </span>
       <button class="pm-close" id="helpClose" type="button" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
@@ -838,6 +862,8 @@
       <h3>Adding files</h3>
       <ul>
         <li><b>Drop</b> PDF, JPG or PNG files anywhere on the page, or use <b>choose files</b>.</li>
+        <li>Once files are added, the top of the page shrinks to a slim bar and the page moves down to your list.
+          Drop more files anywhere at any time; <b>Clear</b> brings back the full page.</li>
         <li><b>Paste</b> a screenshot with <b>Ctrl+V</b>. Each paste adds a row called "Pasted image 1", "Pasted image 2" and so on.</li>
         <li>Locked PDFs are unlocked automatically. Any other kind of file is skipped, and a line says so.</li>
       </ul>
@@ -1387,6 +1413,16 @@ else if (typeof exports === 'object')
     return it.name.replace(/\.(jpe?g|png)$/i, "") + ".pdf";
   }
 
+  // Glides the page down so "2. Order & merge" is at the top of the window - unless it is
+  // already in view near the top, in which case the page stays put.
+  function showResults(){
+    if(results.hidden) return;
+    var top = results.getBoundingClientRect().top;
+    if(top >= 0 && top <= window.innerHeight*0.3) return;
+    var smooth = !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    window.scrollTo({ top: Math.max(0, window.pageYOffset + top - 16), behavior: smooth ? "smooth" : "auto" });
+  }
+
   // PDFs and images go into one list, in the order they arrive. An image is held as a
   // one-page item (pages:1, sel:[true]) so the counting, ordering, order note and merge
   // checks treat it exactly like a one-page PDF.
@@ -1413,7 +1449,7 @@ else if (typeof exports === 'object')
         busy=false;
         if(skipped){ working.hidden=false; working.textContent=skipMsg(); }
         else { working.hidden=true; }
-        renderRows(); return;
+        renderRows(); showResults(); return;
       }
       var entry=queue[idx++], f=entry.f, label=entry.label;
       working.textContent="Reading "+label+" ("+idx+" of "+queue.length+")…";
@@ -2343,6 +2379,7 @@ else if (typeof exports === 'object')
   function updateActions(){
     var n=items.length, ok=items.filter(function(x){ return x.pages!=null && countSel(x)>0; }).length;
     processedEl.hidden = n===0;
+    document.body.classList.toggle("compact", n>0);      // slim top of page once files are in
     fileCountEl.textContent = n + (n===1 ? " file added" : " files added");
     // The button says what pressing it will actually do, judged on the files that will
     // take part (readable, with at least one page selected):
