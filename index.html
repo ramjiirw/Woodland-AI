@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — Home
-  Build 1.5
+  Build 1.6
   Landing page for Woodland AI. Brand board applied: Lora + Sora, Forest/Pine/Slate palette.
   Tools grid links out to each self-contained tool page (first: Bank Statement Utility).
   Self-contained: fonts and images embedded, no external dependencies.
+
+  1.6 changes:
+   - PDF Merge tile text now says it takes JPGs and PNGs as well as PDFs (PDF Merge
+     Utility Build 2.0 merges images alongside PDFs).
+   - JPG to PDF tile removed, as PDF Merge now does that job. The JPG to PDF Utility
+     file itself is unchanged; it is simply no longer linked from this page.
 -->
 <html lang="en-GB">
 <head>
@@ -176,19 +182,8 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4-8 4-8-4 8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg>
           </span>
           <h3>PDF Merge</h3>
-          <p>Combine several PDFs into one file, in any order — drag to arrange, then download.
-            Unlocks protected PDFs automatically.</p>
-          <span class="go">Open tool
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
-          </span>
-        </a>
-
-        <a class="tile live" href="JPG%20to%20PDF%20Utility%20Woodland%20AI.html">
-          <span class="ico">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
-          </span>
-          <h3>JPG to PDF</h3>
-          <p>Combine several JPG images into one PDF — drag to arrange the order, then download. Each image becomes an A4 page.</p>
+          <p>Combine PDFs, JPGs and PNGs into one PDF, in any order. Drag to arrange, then download.
+            Each image becomes an A4 page, and protected PDFs are unlocked automatically.</p>
           <span class="go">Open tool
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
           </span>
@@ -228,7 +223,7 @@
     </div>
     <div class="wrap legal">
       <span>© Woodland Applied Intelligence</span>
-      <span class="build">Build 1.5</span>
+      <span class="build">Build 1.6</span>
     </div>
   </footer>
 
