@@ -1,12 +1,37 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — PDF MERGE UTILITY
-  Build 1.12
+  Build 2.0
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
-  Drop PDFs anywhere on the page, drag the rows to set the order, and combine them
-  into a single PDF. Locked PDFs are unlocked automatically. The result can be
+  Drop PDFs, JPGs and PNGs anywhere on the page (or paste a screenshot with Ctrl+V),
+  drag the rows to set the order, and combine them into a single PDF. Each image
+  becomes its own A4 page. Locked PDFs are unlocked automatically. The result can be
   compressed (None / Standard / Smaller) by recompressing the images inside it,
   which leaves text selectable and searchable.
+
+  2.0 changes:
+   - Images can now be merged alongside PDFs. JPG and PNG files are accepted by dropping
+     them or through "choose files", and a screenshot can be pasted with Ctrl+V anywhere
+     on the page (each paste adds a row called "Pasted image 1", "Pasted image 2", and so
+     on). PDFs and images sit in the same list and are merged in whatever order the rows
+     are in. This takes over the work of the separate JPG to PDF Utility.
+   - Each image becomes one A4 page. The page turns landscape for a wide image and
+     portrait for a tall one, and the image is scaled to fit with a small margin - the
+     same layout the JPG to PDF Utility used. PNGs (which is what a pasted screenshot
+     arrives as) are converted to high-quality JPG on the way in, with any transparency
+     flattened onto white.
+   - Image rows show "1 page" in the Pages column instead of a "Choose pages" button, and
+     an image icon instead of the PDF icon. The row download saves that image as a
+     one-page PDF named after the image (photo.jpg downloads as photo.pdf).
+   - Compression (None / Standard / Smaller) is unchanged and now also shrinks the image
+     pages, since they are stored in the merged PDF as ordinary JPG pictures.
+   - If a single image is the only item, the result is named after it (photo.pdf), in the
+     same way a single PDF keeps its own name. Two or more items give "merged.pdf".
+   - Files that are not a PDF, JPG or PNG are skipped, and a line now says how many were
+     skipped. They used to be ignored silently.
+   - Wording updated throughout to mention images: the heading, the introduction, the
+     step 1 panel, the drop zone (which no longer says "two or more", untrue since 1.0)
+     and the message shown when nothing in the list can be used.
 
   1.12 changes:
    - The merge order is now stated in words. A line above the table reads, for example,
@@ -458,7 +483,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">PDF MERGE UTILITY</span>
-    <a class="help" title="PDF Merge Utility — Build 1.12">
+    <a class="help" title="PDF Merge Utility — Build 2.0">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -469,9 +494,10 @@
     <!-- HERO -->
     <section class="card hero">
       <div class="hero-text">
-        <h1>Merge your PDFs into <span class="accent">one file.</span></h1>
-        <p>Drop your PDFs below in any order, drag the rows to arrange them, and combine them into a
-          single PDF you can download. Locked PDFs are unlocked automatically.</p>
+        <h1>Merge your PDFs and images into <span class="accent">one file.</span></h1>
+        <p>Drop your PDFs, JPGs and PNGs below in any order, drag the rows to arrange them, and combine
+          them into a single PDF you can download. Each image becomes its own A4 page. Locked PDFs are
+          unlocked automatically.</p>
       </div>
       <div class="hero-banner" aria-hidden="true"></div>
     </section>
@@ -484,8 +510,8 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v5"/><path d="M9.5 14.5h5"/></svg>
           </span>
           <div>
-            <h2>1. Add PDFs to merge</h2>
-            <p>Add two or more PDF files. Drag the rows to set the order, then merge them into a
+            <h2>1. Add PDFs and images</h2>
+            <p>Add PDF, JPG or PNG files. Drag the rows to set the order, then merge them into a
               single PDF.</p>
           </div>
         </div>
@@ -496,11 +522,11 @@
       </div>
 
       <div class="drop" id="drop" tabindex="0" role="button"
-           aria-label="Drop PDF files here, or press Enter to choose files">
+           aria-label="Drop PDF, JPG or PNG files here, or press Enter to choose files. Press Ctrl+V to paste a screenshot.">
         <svg class="up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V5"/><path d="M8 9l4-4 4 4"/><path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
-        <p class="big">Drop PDFs here</p>
-        <p class="small">or <span class="browse">choose files</span> · two or more</p>
-        <input type="file" id="file" accept="application/pdf,.pdf" multiple>
+        <p class="big">Drop PDFs or images here</p>
+        <p class="small">PDF, JPG or PNG · Ctrl+V to paste a screenshot · or <span class="browse">choose files</span></p>
+        <input type="file" id="file" accept="application/pdf,.pdf,image/jpeg,image/png,.jpg,.jpeg,.png" multiple>
       </div>
     </section>
 
@@ -578,12 +604,12 @@
         <tbody id="rows"></tbody>
       </table>
 
-      <p class="empty-hint" id="emptyHint" hidden>Add at least one more readable PDF to merge.</p>
+      <p class="empty-hint" id="emptyHint" hidden>Add at least one readable PDF or image.</p>
 
     </section>
   </main>
 
-  <footer><span class="build">Build 1.12</span></footer>
+  <footer><span class="build">Build 2.0</span></footer>
 </div>
 
 <div class="modal" id="pageModal" hidden>
@@ -972,29 +998,133 @@ else if (typeof exports === 'object')
   mrPreview.addEventListener("click", function(){ if(mergedBlob){ var u=URL.createObjectURL(mergedBlob); window.open(u,"_blank"); setTimeout(function(){ URL.revokeObjectURL(u); },60000); } });
   mrDownload.addEventListener("click", function(){ if(mergedBlob) triggerDownload(mergedBlob, mergedName); });
 
-  function addFiles(fileList){
-    var pdfs=[];
-    for(var i=0;i<fileList.length;i++){ var f=fileList[i]; if(f.type==="application/pdf" || /\.pdf$/i.test(f.name)) pdfs.push(f); }
-    if(!pdfs.length) return;
+  function isPdfFile(f){ return f.type==="application/pdf" || /\.pdf$/i.test(f.name||""); }
+  function isImageFile(f){
+    var t=f.type||"";
+    return t==="image/jpeg" || t==="image/png" || /\.(jpe?g|png)$/i.test(f.name||"");
+  }
+
+  // Everything downstream embeds JPEG, so anything arriving as PNG (which is what
+  // Windows puts on the clipboard when you copy a screenshot) is converted here,
+  // once, at high quality. Any transparency is flattened onto white.
+  function toJpegBytes(f){
+    var isJpeg = f.type==="image/jpeg" || /\.jpe?g$/i.test(f.name||"");
+    if(isJpeg) return f.arrayBuffer().then(function(b){ return new Uint8Array(b); });
+    return createImageBitmap(f).then(function(bmp){
+      var c=document.createElement("canvas");
+      c.width=bmp.width; c.height=bmp.height;
+      var g=c.getContext("2d");
+      g.fillStyle="#ffffff"; g.fillRect(0,0,c.width,c.height);
+      g.drawImage(bmp,0,0);
+      if(bmp.close) bmp.close();
+      return new Promise(function(res, rej){
+        c.toBlob(function(b){ b ? res(b) : rej(new Error("could not convert image")); }, "image/jpeg", 0.92);
+      });
+    }).then(function(b){ return b.arrayBuffer(); }).then(function(ab){ return new Uint8Array(ab); });
+  }
+
+  // The name a file is saved under when it is the only thing being output. A PDF keeps
+  // its own name; an image keeps its name with .pdf in place of .jpg / .png.
+  function pdfNameFor(it){
+    if(it.kind!=="image") return it.name;
+    return it.name.replace(/\.(jpe?g|png)$/i, "") + ".pdf";
+  }
+
+  // PDFs and images go into one list, in the order they arrive. An image is held as a
+  // one-page item (pages:1, sel:[true]) so the counting, ordering, order note and merge
+  // checks treat it exactly like a one-page PDF.
+  function addFiles(fileList, labelOverride){
+    var queue=[], skipped=0;
+    for(var i=0;i<fileList.length;i++){
+      var f=fileList[i];
+      if(isPdfFile(f)) queue.push({ f:f, kind:"pdf", label:f.name });
+      else if(isImageFile(f)) queue.push({ f:f, kind:"image", label: labelOverride || f.name || "Image" });
+      else skipped++;
+    }
+    function skipMsg(){
+      return skipped+(skipped===1?" file was":" files were")+" not a PDF, JPG or PNG and "+
+             (skipped===1?"was":"were")+" skipped.";
+    }
+    if(!queue.length){
+      if(skipped){ results.hidden=false; working.hidden=false; working.textContent=skipMsg(); }
+      return;
+    }
     results.hidden=false; busy=true; working.hidden=false;
     var idx=0;
     function next(){
-      if(idx>=pdfs.length){ busy=false; working.hidden=true; renderRows(); return; }
-      var f=pdfs[idx++];
-      working.textContent="Reading "+f.name+" ("+idx+" of "+pdfs.length+")…";
-      f.arrayBuffer().then(function(buf){
-        var bytes=new Uint8Array(buf);
-        return loadDoc(new Uint8Array(bytes.slice(0))).then(function(doc){
-          var np = doc.getPageCount(), sel = [];
-          for(var q=0;q<np;q++) sel.push(true);      // all pages in, until told otherwise
-          items.push({id:++uid, name:f.name, size:f.size, pages:np, bytes:bytes,
-                      sel:sel, thumbs:null});
+      if(idx>=queue.length){
+        busy=false;
+        if(skipped){ working.hidden=false; working.textContent=skipMsg(); }
+        else { working.hidden=true; }
+        renderRows(); return;
+      }
+      var entry=queue[idx++], f=entry.f, label=entry.label;
+      working.textContent="Reading "+label+" ("+idx+" of "+queue.length+")…";
+      var step;
+      if(entry.kind==="image"){
+        step = toJpegBytes(f).then(function(bytes){
+          return PDFLib.PDFDocument.create().then(function(probe){
+            return probe.embedJpg(new Uint8Array(bytes.slice(0))).then(function(img){
+              items.push({id:++uid, kind:"image", name:label, size:f.size||bytes.length, pages:1,
+                          bytes:bytes, sel:[true], w:img.width, h:img.height});
+            });
+          });
         }).catch(function(err){
-          items.push({id:++uid, name:f.name, size:f.size, pages:null, error:(err&&err.message)||"unreadable", bytes:null});
+          items.push({id:++uid, kind:"image", name:label, size:f.size||0, pages:null,
+                      error:(err&&err.message)||"unreadable", bytes:null});
         });
-      }).then(function(){ mergedBlob=null; hideResult(); setTimeout(next,20); });
+      } else {
+        step = f.arrayBuffer().then(function(buf){
+          var bytes=new Uint8Array(buf);
+          return loadDoc(new Uint8Array(bytes.slice(0))).then(function(doc){
+            var np = doc.getPageCount(), sel = [];
+            for(var q=0;q<np;q++) sel.push(true);      // all pages in, until told otherwise
+            items.push({id:++uid, kind:"pdf", name:f.name, size:f.size, pages:np, bytes:bytes,
+                        sel:sel, thumbs:null});
+          }).catch(function(err){
+            items.push({id:++uid, kind:"pdf", name:f.name, size:f.size, pages:null, error:(err&&err.message)||"unreadable", bytes:null});
+          });
+        });
+      }
+      step.then(function(){ mergedBlob=null; hideResult(); setTimeout(next,20); });
     }
     next();
+  }
+
+  // Paste a screenshot straight in - each paste adds another row. Ignored while the
+  // page picker is open, and while something is already being read or built.
+  var pasteCount=0;
+  document.addEventListener("paste", function(e){
+    if(busy || !pageModal.hidden) return;
+    var cd=e.clipboardData; if(!cd) return;
+    var got=null, its=cd.items||[], i;
+    for(i=0;i<its.length;i++){
+      if(its[i].type && its[i].type.indexOf("image/")===0){
+        var cf=its[i].getAsFile();
+        if(cf){ got=cf; break; }
+      }
+    }
+    if(!got && cd.files){
+      for(i=0;i<cd.files.length;i++){
+        if(cd.files[i].type && cd.files[i].type.indexOf("image/")===0){ got=cd.files[i]; break; }
+      }
+    }
+    if(!got) return;
+    e.preventDefault();
+    pasteCount++;
+    addFiles([got], "Pasted image "+pasteCount);
+  });
+
+  // One image on one A4 page: landscape for a wide image, portrait for a tall one,
+  // scaled to fit inside a small margin and centred. Same layout as the JPG to PDF Utility.
+  function addImagePage(out, it){
+    var A4_PORT=[595.28,841.89], A4_LAND=[841.89,595.28], MARGIN=18;
+    var dims = it.w > it.h ? A4_LAND : A4_PORT, pw=dims[0], ph=dims[1];
+    var scale=Math.min((pw-2*MARGIN)/it.w, (ph-2*MARGIN)/it.h);
+    var dw=it.w*scale, dh=it.h*scale;
+    return out.embedJpg(new Uint8Array(it.bytes.slice(0))).then(function(img){
+      out.addPage([pw,ph]).drawImage(img,{x:(pw-dw)/2, y:(ph-dh)/2, width:dw, height:dh});
+    });
   }
 
   // ---------------- page picker ----------------
@@ -1319,7 +1449,7 @@ else if (typeof exports === 'object')
       var o=document.createElement("td"); o.className="c-order"; o.textContent=(i+1); tr.appendChild(o);
 
       var n=document.createElement("td"); n.className="c-name";
-      n.innerHTML='<span class="fname-wrap">'+pdfIco()+'<span class="fmeta"><span class="fname"></span><span class="fsize">'+fmtSize(it.size)+'</span></span></span>';
+      n.innerHTML='<span class="fname-wrap">'+(it.kind==="image"?imgIco():pdfIco())+'<span class="fmeta"><span class="fname"></span><span class="fsize">'+fmtSize(it.size)+'</span></span></span>';
       n.querySelector(".fname").textContent=it.name; n.querySelector(".fname").title=it.name;
       if(it.downloaded){
         var mk=document.createElement("span");
@@ -1332,6 +1462,9 @@ else if (typeof exports === 'object')
       var p=document.createElement("td"); p.className="c-kept";
       if(it.pages==null){
         p.innerHTML = '<span class="c-dash" title="'+(it.error||"")+'">could not read</span>';
+      } else if(it.kind==="image"){
+        // An image is always exactly one page, so there is nothing to choose.
+        p.innerHTML = '<span class="pagesel"><span class="cnt"><b>1</b> <span class="of">page</span></span></span>';
       } else {
         var chosen = countSel(it);
         p.innerHTML = '<span class="pagesel"><span class="cnt"><b>'+chosen+'</b>'+
@@ -1346,8 +1479,9 @@ else if (typeof exports === 'object')
 
       var d=document.createElement("td"); d.className="c-drag";
       var canDl = it.pages!=null && countSel(it)>0;
-      var dlTitle = it.pages==null ? "This PDF could not be read"
+      var dlTitle = it.pages==null ? (it.kind==="image" ? "This image could not be read" : "This PDF could not be read")
                   : (canDl ? (it.downloaded ? "Downloaded. Click to download again."
+                              : it.kind==="image" ? "Download as a one-page PDF"
                               : "Download " + (countSel(it)===it.pages ? "all " + it.pages : "these " + countSel(it)) +
                                 (countSel(it)===1 ? " page" : " pages"))
                            : "Select at least one page first");
@@ -1441,6 +1575,7 @@ else if (typeof exports === 'object')
       var chain=Promise.resolve();
       usable.forEach(function(it){
         chain=chain.then(function(){
+          if(it.kind==="image") return addImagePage(out, it);
           return loadDoc(new Uint8Array(it.bytes.slice(0))).then(function(src){
             return out.copyPages(src, selectedIndices(it)).then(function(pgs){ pgs.forEach(function(pg){ out.addPage(pg); }); });
           });
@@ -1454,8 +1589,9 @@ else if (typeof exports === 'object')
       level="none"; paintPills(); pillsEnabled(true);
       mrcNoteText.textContent=NOTE_NONE;
       mergedBlob=new Blob([bytes], {type:"application/pdf"});
-      // With a single file there is no merge, so the original name is kept.
-      mergedName = usable.length===1 ? usable[0].name : "merged.pdf";
+      // With a single file there is no merge, so the original name is kept
+      // (an image keeps its name with .pdf in place of .jpg / .png).
+      mergedName = usable.length===1 ? pdfNameFor(usable[0]) : "merged.pdf";
       mrName.textContent=mergedName;
       setSub(mergedBlob.size, null);
       mergeResult.hidden=false;
@@ -1641,14 +1777,16 @@ else if (typeof exports === 'object')
     var out;
     PDFLib.PDFDocument.create().then(function(o){
       out=o;
-      return loadDoc(new Uint8Array(it.bytes.slice(0)));
-    }).then(function(src){
-      return out.copyPages(src, selectedIndices(it));
-    }).then(function(pgs){
-      pgs.forEach(function(pg){ out.addPage(pg); });
-      return out.save();
+      // An image row becomes a one-page PDF on its own A4 page.
+      if(it.kind==="image") return addImagePage(out, it).then(function(){ return out.save(); });
+      return loadDoc(new Uint8Array(it.bytes.slice(0))).then(function(src){
+        return out.copyPages(src, selectedIndices(it));
+      }).then(function(pgs){
+        pgs.forEach(function(pg){ out.addPage(pg); });
+        return out.save();
+      });
     }).then(function(bytes){
-      triggerDownload(new Blob([bytes], {type:"application/pdf"}), it.name);
+      triggerDownload(new Blob([bytes], {type:"application/pdf"}), pdfNameFor(it));
       it.downloaded = true;
       clearTimeout(slow);
       busy=false; working.hidden=true;
@@ -1669,6 +1807,7 @@ else if (typeof exports === 'object')
   }
 
   function pdfIco(){ return '<svg class="pdf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>'; }
+  function imgIco(){ return '<svg class="pdf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>'; }
   function gripIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>'; }
   function upIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>'; }
   function dnIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'; }
