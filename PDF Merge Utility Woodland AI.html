@@ -1,13 +1,40 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — PDF MERGE UTILITY
-  Build 2.1
+  Build 2.2
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop PDFs, JPGs and PNGs anywhere on the page (or paste a screenshot with Ctrl+V),
   drag the rows to set the order, and combine them into a single PDF. Each image
   becomes its own A4 page. Locked PDFs are unlocked automatically. The result can be
   compressed (None / Standard / Smaller) by recompressing the images inside it,
   which leaves text selectable and searchable.
+
+  2.2 changes:
+   - Magnifier in Preview & Arrange. Hovering over a tile shows a magnifier; clicking it
+     opens that file full size, drawn fresh at high resolution. For a PDF, Previous / Next
+     (or the left and right arrow keys) step through the pages that will be merged; an
+     image is shown on its own. Zoom with the - and + buttons (or the - and + keys), and
+     Fit returns to the width of the window. Back or Escape returns to the tiles without
+     affecting the order being arranged.
+   - Rotate. Each tile in Preview & Arrange has a rotate button: for an image it turns the
+     image, for a PDF it turns every page of that file. Each page in Choose pages has its
+     own rotate button, for when just one page is sideways. Each press turns a quarter turn
+     clockwise. As with everything else in those windows, nothing changes until Apply.
+     Rotation is used by the merge and by the row download, and shows in the previews,
+     the magnifier and the full page view.
+   - The merged file is named after the date it was made, for example
+     "2026-10-04 Combined.pdf", ready for the rest of the name to be typed in. A single
+     PDF or a single image still keeps its own name.
+   - Image pages. When the merge includes an image, the result banner offers "A4 page" or
+     "Edge to edge". A4 page (the default) puts each image on an A4 page, turned to suit,
+     and a size slider sets how much of the page it fills, from 25% to 100% (100% is the
+     previous behaviour). Edge to edge makes each page exactly the shape of its image,
+     with no border, at up to A4 size. The file updates when the setting changes. The row
+     download of a single image uses the same setting.
+   - Page numbers. The result banner has a Page numbers Off / On switch, off by default.
+     On adds "Page 1 of 12" in small grey text at the bottom centre of each page of the
+     merged file, the right way up even on rotated pages. Row downloads are not numbered.
+   - Help. The Help link at the top right now opens a short "How to use" window.
 
   2.1 changes:
    - Preview & Arrange. A new button beside the main button opens a full-screen window
@@ -495,6 +522,55 @@
   .atile .apages{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
   .atile.bad .aname{color:#8a2e22;}
   .atile.none .apv img{opacity:.45;}
+  /* tile tools: rotate + magnifier, top right, shown on hover */
+  .atools{position:absolute;top:9px;right:9px;display:flex;gap:6px;opacity:0;transition:opacity .12s ease;}
+  .atile:hover .atools,.atools:focus-within{opacity:1;}
+  .atool{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.95);border:1px solid var(--line);
+    color:var(--forest);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+    box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  .atool:hover{border-color:var(--pine);background:#fff;}
+  .atool svg{width:16px;height:16px;display:block;}
+  .atool.zm{cursor:zoom-in;}
+  .arot{position:absolute;bottom:52px;right:9px;font-size:11px;font-weight:600;color:#fff;background:var(--pine);
+    border-radius:10px;padding:2px 8px;}
+  .arot[hidden]{display:none;}
+
+  /* page picker: rotate button beside the magnifier */
+  .prot{position:absolute;top:7px;left:36px;width:24px;height:24px;border-radius:7px;
+    background:rgba(255,255,255,.92);border:1px solid var(--line);color:var(--forest);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;padding:0;}
+  .thumb:hover .prot,.prot:focus-visible{opacity:1;}
+  .prot svg{width:14px;height:14px;display:block;}
+
+  /* zoom controls in the full-size views */
+  .zoomctl{display:flex;align-items:center;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:#fff;}
+  .zoomctl button{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--text);background:transparent;
+    border:0;border-left:1px solid var(--line);padding:6px 11px;cursor:pointer;min-width:34px;}
+  .zoomctl button:first-child{border-left:0;}
+  .zoomctl button:hover{background:#eef3f0;}
+  .zoomctl .zv{font-size:12px;color:var(--muted);padding:0 10px;border-left:1px solid var(--line);
+    font-variant-numeric:tabular-nums;min-width:52px;text-align:center;}
+
+  /* extra option strips in the result banner */
+  .mr-opt{margin-top:14px;border-top:1px solid #bfe0d1;padding-top:14px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .mr-opt[hidden]{display:none;}
+  .mr-opt .mrc-pills{margin-left:0;}
+  .mr-opt .opt-right{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .imgsize{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--text);}
+  .imgsize input[type=range]{position:static;width:150px;height:auto;opacity:1;pointer-events:auto;accent-color:var(--forest);}
+  .imgsize.off{opacity:.45;}
+  .imgsize b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;min-width:38px;display:inline-block;}
+
+  /* help window */
+  .help-body{flex:1 1 auto;overflow-y:auto;padding:22px 28px 28px;color:var(--text);font-size:14px;line-height:1.6;}
+  .help-body h3{font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink);margin:20px 0 6px;}
+  .help-body h3:first-child{margin-top:0;}
+  .help-body p{margin:0 0 8px;max-width:78ch;}
+  .help-body ul{margin:0 0 8px;padding-left:20px;max-width:78ch;}
+  .help-body li{margin:3px 0;}
+  .help-body b{color:var(--ink);font-weight:600;}
+  .help-modal .modal-box{width:min(820px,100%);}
 
   .order-note{margin:16px 0 4px;font-size:12.5px;color:var(--muted);line-height:1.5;
     display:flex;gap:8px;align-items:flex-start;}
@@ -543,7 +619,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">PDF MERGE UTILITY</span>
-    <a class="help" title="PDF Merge Utility — Build 2.1">
+    <a class="help" id="helpBtn" href="#" role="button" title="PDF Merge Utility — Build 2.2">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -637,6 +713,36 @@
         </div>
        </div>
 
+       <div class="mr-opt" id="optImages" hidden>
+         <span class="mrc-label">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+           Image pages
+         </span>
+         <span class="opt-right">
+           <label class="imgsize" id="imgSizeWrap">Size
+             <input type="range" id="imgPct" min="25" max="100" step="5" value="100" aria-label="Image size on the A4 page">
+             <b id="imgPctVal">100%</b>
+           </label>
+           <span class="mrc-pills" id="imgModePills">
+             <button class="mrc-pill is-on" type="button" data-mode="a4">A4 page</button>
+             <button class="mrc-pill" type="button" data-mode="edge">Edge to edge</button>
+           </span>
+         </span>
+       </div>
+
+       <div class="mr-opt" id="optNumbers">
+         <span class="mrc-label">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M10 17h4"/></svg>
+           Page numbers
+         </span>
+         <span class="opt-right">
+           <span class="mrc-pills" id="numPills">
+             <button class="mrc-pill is-on" type="button" data-num="off">Off</button>
+             <button class="mrc-pill" type="button" data-num="on">On</button>
+           </span>
+         </span>
+       </div>
+
        <div class="mr-compress">
          <span class="mrc-label">
            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4"/><path d="M20 9V5a1 1 0 0 0-1-1h-4"/><path d="M4 15v4a1 1 0 0 0 1 1h4"/><path d="M20 15v4a1 1 0 0 1-1 1h-4"/><path d="M8 12h8"/></svg>
@@ -673,7 +779,77 @@
     </section>
   </main>
 
-  <footer><span class="build">Build 2.1</span></footer>
+  <footer><span class="build">Build 2.2</span></footer>
+</div>
+
+<div class="modal help-modal" id="helpModal" hidden>
+  <div class="modal-back"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-head">
+      <span>
+        <span class="pm-title" id="helpTitle">How to use the PDF Merge Utility</span>
+        <span class="pm-sub" id="helpSub">Build 2.2</span>
+      </span>
+      <button class="pm-close" id="helpClose" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="help-body">
+      <h3>What it does</h3>
+      <p>Combines PDFs, JPGs and PNGs into a single PDF, in whatever order you choose. Everything happens
+        in your browser: <b>nothing is uploaded and nothing leaves your computer.</b></p>
+
+      <h3>Adding files</h3>
+      <ul>
+        <li><b>Drop</b> PDF, JPG or PNG files anywhere on the page, or use <b>choose files</b>.</li>
+        <li><b>Paste</b> a screenshot with <b>Ctrl+V</b>. Each paste adds a row called "Pasted image 1", "Pasted image 2" and so on.</li>
+        <li>Locked PDFs are unlocked automatically. Any other kind of file is skipped, and a line says so.</li>
+      </ul>
+
+      <h3>Setting the order</h3>
+      <ul>
+        <li>Drag the rows in the table, or use the small up and down arrows beside each row.</li>
+        <li><b>Preview &amp; Arrange</b> opens a large tile for each file so you can see what it is. Drag the tiles into
+          order (left to right, then top to bottom) and press <b>Apply</b>. Cancel leaves the order as it was.</li>
+        <li>Hover over a tile and click the <b>magnifier</b> to see the file full size. For a PDF, Previous and Next step
+          through its pages. Use <b>-</b> and <b>+</b> to zoom.</li>
+        <li>The line above the table always says which file will come first and which last.</li>
+      </ul>
+
+      <h3>Choosing pages</h3>
+      <p><b>Choose pages</b> on a PDF row shows every page. Click a page to leave it out or put it back; Shift-click
+        selects a range. All, None, Invert, Odd only and Even only are at the top. Press <b>Apply</b> to keep your choice.</p>
+
+      <h3>Rotating</h3>
+      <ul>
+        <li>In <b>Preview &amp; Arrange</b>, the rotate button on a tile turns an image, or every page of a PDF, a quarter turn clockwise.</li>
+        <li>In <b>Choose pages</b>, each page has its own rotate button, for when just one page is sideways.</li>
+      </ul>
+
+      <h3>Making the PDF</h3>
+      <ul>
+        <li>The main button says what it will do: <b>Merge PDFs</b> (all PDFs), <b>Merge to PDF</b> (PDFs and images),
+          <b>Create PDF</b> (images only), or <b>Compress</b> / <b>Create file</b> for a single PDF.</li>
+        <li>The result is named after today's date, for example <b>2026-10-04 Combined.pdf</b>, so you can add the rest of
+          the name when you save it. A single file keeps its own name.</li>
+        <li><b>Preview</b> opens the result in a new tab; <b>Download</b> saves it.</li>
+        <li>The download button on each row saves just that file (its chosen pages, or an image as a one-page PDF).</li>
+      </ul>
+
+      <h3>Options after merging</h3>
+      <ul>
+        <li><b>Image pages</b> (when there are images): <b>A4 page</b> with a size slider from 25% to 100%, or
+          <b>Edge to edge</b>, where each page is exactly the shape of its image with no border.</li>
+        <li><b>Page numbers</b>: off unless you switch them on. Adds "Page 1 of 12" at the bottom centre of each page.</li>
+        <li><b>Compress</b>: None, Standard or Smaller. This shrinks the pictures inside the file; text stays sharp,
+          selectable and searchable. If a file cannot be made smaller, it says so.</li>
+      </ul>
+    </div>
+    <div class="modal-foot">
+      <p class="modal-note">Woodland Applied Intelligence &middot; PDF Merge Utility</p>
+      <span class="foot-actions"><button class="btn-apply" id="helpOk" type="button">Close</button></span>
+    </div>
+  </div>
 </div>
 
 <div class="modal" id="arrModal" hidden>
@@ -697,6 +873,31 @@
       </span>
     </div>
     <div class="arr-grid" id="arrGrid"></div>
+    <div class="pv" id="arrView" hidden>
+      <div class="pv-head">
+        <button class="pbtn" id="avBack" type="button">Back to files</button>
+        <span class="pv-label" id="avLabel">File</span>
+        <span class="pv-state" id="avState"></span>
+        <span class="pv-actions">
+          <span class="zoomctl">
+            <button type="button" id="avOut" aria-label="Zoom out" title="Zoom out (-)">&minus;</button>
+            <span class="zv" id="avZoom">100%</span>
+            <button type="button" id="avIn" aria-label="Zoom in" title="Zoom in (+)">+</button>
+            <button type="button" id="avFit" title="Fit to the window width (0)">Fit</button>
+          </span>
+          <button class="pm-close" id="avClose" type="button" aria-label="Back to files">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+          </button>
+        </span>
+      </div>
+      <div class="pv-body" id="avBody"></div>
+      <div class="pv-foot">
+        <button class="pbtn" id="avPrev" type="button">Previous</button>
+        <button class="pbtn" id="avNext" type="button">Next</button>
+        <span class="spacer"></span>
+        <span class="pv-busy">Left and right arrow keys step through pages; - and + zoom.</span>
+      </div>
+    </div>
     <div class="modal-foot">
       <p class="modal-note" id="arrNote">Drag a file to where you want it in the merge. Nothing changes until you press Apply.</p>
       <span class="foot-actions">
@@ -1057,6 +1258,16 @@ else if (typeof exports === 'object')
   var arrSub=document.getElementById("arrSub"), arrGrid=document.getElementById("arrGrid");
   var arrSizes=document.getElementById("arrSizes"), arrClose=document.getElementById("arrClose");
   var arrCancel=document.getElementById("arrCancel"), arrApply=document.getElementById("arrApply");
+  var arrView=document.getElementById("arrView"), avBack=document.getElementById("avBack");
+  var avLabel=document.getElementById("avLabel"), avState=document.getElementById("avState");
+  var avOut=document.getElementById("avOut"), avIn=document.getElementById("avIn"), avFit=document.getElementById("avFit");
+  var avZoom=document.getElementById("avZoom"), avClose=document.getElementById("avClose");
+  var avBody=document.getElementById("avBody"), avPrev=document.getElementById("avPrev"), avNext=document.getElementById("avNext");
+  var optImages=document.getElementById("optImages"), imgModePills=document.getElementById("imgModePills");
+  var imgPct=document.getElementById("imgPct"), imgPctVal=document.getElementById("imgPctVal");
+  var imgSizeWrap=document.getElementById("imgSizeWrap"), numPills=document.getElementById("numPills");
+  var helpBtn=document.getElementById("helpBtn"), helpModal=document.getElementById("helpModal");
+  var helpClose=document.getElementById("helpClose"), helpOk=document.getElementById("helpOk");
 
   var items=[], uid=0, busy=false, mergedBlob=null, mergedName="merged.pdf", dragId=null;
   var arrDragId=null;                 // set while a tile in Preview & Arrange is being dragged
@@ -1168,7 +1379,7 @@ else if (typeof exports === 'object')
           return PDFLib.PDFDocument.create().then(function(probe){
             return probe.embedJpg(new Uint8Array(bytes.slice(0))).then(function(img){
               items.push({id:++uid, kind:"image", name:label, size:f.size||bytes.length, pages:1,
-                          bytes:bytes, sel:[true], w:img.width, h:img.height});
+                          bytes:bytes, sel:[true], rot:[0], w:img.width, h:img.height});
             });
           });
         }).catch(function(err){
@@ -1179,10 +1390,10 @@ else if (typeof exports === 'object')
         step = f.arrayBuffer().then(function(buf){
           var bytes=new Uint8Array(buf);
           return loadDoc(new Uint8Array(bytes.slice(0))).then(function(doc){
-            var np = doc.getPageCount(), sel = [];
-            for(var q=0;q<np;q++) sel.push(true);      // all pages in, until told otherwise
+            var np = doc.getPageCount(), sel = [], rot = [];
+            for(var q=0;q<np;q++){ sel.push(true); rot.push(0); }   // all pages in, none turned, until told otherwise
             items.push({id:++uid, kind:"pdf", name:f.name, size:f.size, pages:np, bytes:bytes,
-                        sel:sel, thumbs:null});
+                        sel:sel, rot:rot, thumbs:null});
           }).catch(function(err){
             items.push({id:++uid, kind:"pdf", name:f.name, size:f.size, pages:null, error:(err&&err.message)||"unreadable", bytes:null});
           });
@@ -1217,15 +1428,38 @@ else if (typeof exports === 'object')
     addFiles([got], "Pasted image "+pasteCount);
   });
 
-  // One image on one A4 page: landscape for a wide image, portrait for a tall one,
-  // scaled to fit inside a small margin and centred. Same layout as the JPG to PDF Utility.
+  // ---- rotation ----
+  // Each item keeps an extra turn per page (0, 90, 180 or 270 degrees clockwise) in it.rot.
+  // It is applied as the page's own rotation setting, on top of any the page already has,
+  // so text in a PDF is not touched and stays sharp and searchable.
+  function rotOf(it, i){ return (it.rot && it.rot[i]) || 0; }
+  function applyRot(page, extra){
+    if(!extra) return;
+    var cur = (page.getRotation && page.getRotation().angle) || 0;
+    page.setRotation(PDFLib.degrees((((cur + extra) % 360) + 360) % 360));
+  }
+
+  // ---- image pages ----
+  // "a4"  : the image on an A4 page (landscape for a wide image, portrait for a tall one),
+  //         centred, filling imgOpts.pct of the space inside a small margin. 100% is the
+  //         layout the JPG to PDF Utility used.
+  // "edge": the page is exactly the shape of the image, no border, at up to A4 size.
+  var imgOpts = { mode:"a4", pct:100 };
   function addImagePage(out, it){
     var A4_PORT=[595.28,841.89], A4_LAND=[841.89,595.28], MARGIN=18;
     var dims = it.w > it.h ? A4_LAND : A4_PORT, pw=dims[0], ph=dims[1];
-    var scale=Math.min((pw-2*MARGIN)/it.w, (ph-2*MARGIN)/it.h);
-    var dw=it.w*scale, dh=it.h*scale;
+    var dw, dh, x, y;
+    if(imgOpts.mode==="edge"){
+      var s=Math.min(pw/it.w, ph/it.h);
+      dw=it.w*s; dh=it.h*s; pw=dw; ph=dh; x=0; y=0;
+    } else {
+      var fit=Math.min((pw-2*MARGIN)/it.w, (ph-2*MARGIN)/it.h) * (imgOpts.pct/100);
+      dw=it.w*fit; dh=it.h*fit; x=(pw-dw)/2; y=(ph-dh)/2;
+    }
     return out.embedJpg(new Uint8Array(it.bytes.slice(0))).then(function(img){
-      out.addPage([pw,ph]).drawImage(img,{x:(pw-dw)/2, y:(ph-dh)/2, width:dw, height:dh});
+      var page = out.addPage([pw,ph]);
+      page.drawImage(img,{x:x, y:y, width:dw, height:dh});
+      applyRot(page, rotOf(it,0));
     });
   }
 
@@ -1244,6 +1478,43 @@ else if (typeof exports === 'object')
   // The modal edits a working copy (pmSel). Nothing reaches the file's own selection
   // until Apply is pressed, so Cancel, the X and Escape all discard cleanly.
   var pmItem=null, pmSel=null, pmLast=null, pmObserver=null, pmSize="m", pmQueue=Promise.resolve();
+  var pmRot=null;                     // working copy of the per-page rotation, applied on Apply
+
+  // A copy of a preview picture turned by 90, 180 or 270 degrees clockwise.
+  function rotateUrl(url, deg){
+    deg=((deg%360)+360)%360;
+    if(!deg) return Promise.resolve(url);
+    return new Promise(function(res, rej){
+      var im=new Image();
+      im.onload=function(){
+        var c=document.createElement("canvas"), side=(deg%180)!==0;
+        c.width = side ? im.height : im.width; c.height = side ? im.width : im.height;
+        var g=c.getContext("2d");
+        g.translate(c.width/2, c.height/2); g.rotate(deg*Math.PI/180);
+        g.drawImage(im, -im.width/2, -im.height/2);
+        res(c.toDataURL("image/jpeg", 0.8));
+      };
+      im.onerror=function(){ rej(new Error("could not turn the preview")); };
+      im.src=url;
+    });
+  }
+
+  // Shows page i's thumbnail in the picker, turned by its working rotation.
+  function pmShowThumb(i){
+    var it=pmItem; if(!it || !it.thumbs || !it.thumbs[i]) return;
+    var deg=pmRot[i]||0;
+    rotateUrl(it.thumbs[i], deg).then(function(url){
+      if(pmItem!==it || (pmRot[i]||0)!==deg) return;   // moved on, or turned again meanwhile
+      var t=pmGrid.querySelector('.thumb[data-page="'+i+'"]'); if(!t) return;
+      var pg=t.querySelector(".pg"); if(!pg) return;
+      pg.innerHTML=""; var img=document.createElement("img"); img.alt=""; img.src=url; pg.appendChild(img);
+    }).catch(function(){});
+  }
+  function pmRotate(i){
+    pmRot[i]=((pmRot[i]||0)+90)%360;
+    pmShowThumb(i);
+    if(!pageView.hidden && pvIndex===i) drawViewer();
+  }
 
   function pmPaint(){
     if(!pmItem) return;
@@ -1282,6 +1553,7 @@ else if (typeof exports === 'object')
 
   function openModal(it){
     pmItem = it; pmSel = it.sel.slice(); pmLast = null;
+    pmRot = (it.rot && it.rot.length===it.pages) ? it.rot.slice() : new Array(it.pages).fill(0);
     pmTitle.textContent = it.name;
     pmSub.textContent = it.pages + (it.pages===1 ? " page" : " pages") + " \u00b7 " + fmtSize(it.size);
     pmTotal.textContent = it.pages;
@@ -1293,8 +1565,11 @@ else if (typeof exports === 'object')
               '<span class="zoom" role="button" tabindex="0" aria-label="View page '+(i+1)+' full size">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M10.5 8v5"/><path d="M8 10.5h5"/></svg>' +
               '</span>' +
+              '<span class="prot" role="button" tabindex="0" title="Rotate this page" aria-label="Rotate page '+(i+1)+'">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>' +
+              '</span>' +
               '<span class="pg">' +
-              (it.thumbs && it.thumbs[i] ? '<img alt="" src="'+it.thumbs[i]+'">' : '<span class="ph"></span>') +
+              (it.thumbs && it.thumbs[i] && !pmRot[i] ? '<img alt="" src="'+it.thumbs[i]+'">' : '<span class="ph"></span>') +
               '</span>' +
               '<span class="pnum">'+(i+1)+'</span></div>';
     }
@@ -1307,6 +1582,14 @@ else if (typeof exports === 'object')
 
     Array.prototype.forEach.call(pmGrid.querySelectorAll(".thumb"), function(t){
       t.addEventListener("click", function(ev){ pmToggle(Number(t.dataset.page), !!ev.shiftKey); });
+      var rb = t.querySelector(".prot");
+      if(rb){
+        rb.addEventListener("click", function(ev){ ev.stopPropagation(); pmRotate(Number(t.dataset.page)); });   // turning is not selecting
+        rb.addEventListener("keydown", function(ev){
+          if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); ev.stopPropagation(); pmRotate(Number(t.dataset.page)); }
+        });
+      }
+      if(it.thumbs && it.thumbs[Number(t.dataset.page)] && pmRot[Number(t.dataset.page)]) pmShowThumb(Number(t.dataset.page));
       var z = t.querySelector(".zoom");
       if(z){
         z.addEventListener("click", function(ev){
@@ -1341,7 +1624,7 @@ else if (typeof exports === 'object')
     pageModal.hidden = true;
     document.body.style.overflow = "";
     document.removeEventListener("keydown", pmKey);
-    pmItem = null; pmSel = null; pmLast = null;
+    pmItem = null; pmSel = null; pmLast = null; pmRot = null;
   }
   function pmKey(e){
     if(!pageView.hidden){
@@ -1373,9 +1656,10 @@ else if (typeof exports === 'object')
       return pdf.getPage(i+1);
     }).then(function(page){
       if(token !== pvToken || pmItem !== it) return;   // moved on already
-      var vp0 = page.getViewport({scale:1});
+      var rot = ((page.rotate||0) + (pmRot[i]||0)) % 360;
+      var vp0 = page.getViewport({scale:1, rotation:rot});
       var target = Math.min(1600, Math.max(900, Math.round(pvBody.clientWidth || 1000)));
-      var vp = page.getViewport({scale: target / vp0.width});
+      var vp = page.getViewport({scale: target / vp0.width, rotation:rot});
       var c = document.createElement("canvas");
       c.width = Math.round(vp.width); c.height = Math.round(vp.height);
       return page.render({canvasContext:c.getContext("2d"), viewport:vp}).promise.then(function(){
@@ -1427,8 +1711,10 @@ else if (typeof exports === 'object')
   function applyModal(){
     if(!pmItem) return;
     var it = pmItem, n = pmSel.reduce(function(a,b){ return a + (b?1:0); }, 0);
-    var changed = pmSel.some(function(v,i){ return v !== it.sel[i]; });
+    var changed = pmSel.some(function(v,i){ return v !== it.sel[i]; }) ||
+                  pmRot.some(function(v,i){ return v !== rotOf(it,i); });
     it.sel = pmSel.slice();
+    it.rot = pmRot.slice();
     // What was downloaded no longer matches what is selected, so the mark must go.
     if(changed) it.downloaded = false;
     mergedBlob=null; hideResult();
@@ -1486,13 +1772,7 @@ else if (typeof exports === 'object')
             var url = c.toDataURL("image/jpeg", 0.72);
             it.thumbs[i] = url;
             if(pmItem !== it) return;
-            var t = pmGrid.querySelector('.thumb[data-page="'+i+'"]');
-            var ph = t && t.querySelector(".ph");
-            if(ph){
-              var img = document.createElement("img");
-              img.alt = ""; img.src = url;
-              ph.parentNode.replaceChild(img, ph);
-            }
+            pmShowThumb(i);
           });
         });
       }).catch(function(err){
@@ -1517,10 +1797,13 @@ else if (typeof exports === 'object')
   }
 
   // ---------------- Preview & Arrange ----------------
-  // One large tile per file, dragged into merge order. The window edits a working copy of
-  // the order (arrOrder, a list of item ids); nothing reaches the table until Apply, so
-  // Cancel, the X and Escape all discard cleanly - the same pattern as Choose pages.
-  var arrOrder=null, arrSize="l", arrObserver=null, arrQueue=Promise.resolve();
+  // One large tile per file, dragged into merge order. The window edits working copies of
+  // the order (arrOrder, a list of item ids) and of any turns made here (arrRot, degrees
+  // per item id); nothing reaches the table until Apply, so Cancel, the X and Escape all
+  // discard cleanly - the same pattern as Choose pages.
+  var arrOrder=null, arrRot=null, arrSize="l", arrObserver=null, arrQueue=Promise.resolve();
+  var ROT_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>';
+  var MAG_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M10.5 8v5"/><path d="M8 10.5h5"/></svg>';
 
   function itemById(id){ for(var i=0;i<items.length;i++){ if(items[i].id===id) return items[i]; } return null; }
 
@@ -1535,6 +1818,39 @@ else if (typeof exports === 'object')
   // The page a PDF's tile shows: the first one that will actually be merged.
   function arrPreviewIndex(it){ var s=selectedIndices(it); return s.length ? s[0] : 0; }
 
+  // The turn to show for page i of an item while this window is open: its own rotation
+  // plus any turn made here and not yet applied.
+  function arrTurn(it, i){ return (rotOf(it, i) + ((arrRot && arrRot[it.id]) || 0)) % 360; }
+
+  // Decoded picture for an image item, kept only while the window is open.
+  function arrBitmap(it){
+    if(!it._bmp) it._bmp = createImageBitmap(new Blob([it.bytes], {type:"image/jpeg"}));
+    return it._bmp;
+  }
+
+  // Draws page i of an item, turned by `turn` degrees, into a new canvas pxWidth wide.
+  function renderInto(it, i, turn, pxWidth){
+    if(it.kind==="image"){
+      return arrBitmap(it).then(function(bmp){
+        var side=(turn%180)!==0, rw=side?bmp.height:bmp.width, rh=side?bmp.width:bmp.height;
+        var c=document.createElement("canvas");
+        c.width=Math.max(1,Math.round(pxWidth)); c.height=Math.max(1,Math.round(pxWidth*rh/rw));
+        var g=c.getContext("2d"), k=c.width/rw;
+        g.translate(c.width/2, c.height/2); g.rotate(turn*Math.PI/180);
+        g.drawImage(bmp, -bmp.width*k/2, -bmp.height*k/2, bmp.width*k, bmp.height*k);
+        return c;
+      });
+    }
+    return pmGetPdf(it).then(function(pdf){ return pdf.getPage(i+1); }).then(function(page){
+      var rot=((page.rotate||0) + turn) % 360;
+      var vp0=page.getViewport({scale:1, rotation:rot});
+      var vp=page.getViewport({scale: pxWidth / vp0.width, rotation:rot});
+      var c=document.createElement("canvas");
+      c.width=Math.round(vp.width); c.height=Math.round(vp.height);
+      return page.render({canvasContext:c.getContext("2d"), viewport:vp}).promise.then(function(){ return c; });
+    });
+  }
+
   function arrPut(tile, url){
     var pv=tile.querySelector(".apv"); if(!pv) return;
     pv.innerHTML="";
@@ -1542,27 +1858,16 @@ else if (typeof exports === 'object')
     pv.appendChild(img);
   }
 
-  // Draws one tile's preview. PDF previews are cached on the item (and redrawn only if the
-  // first kept page has changed since), so reopening the window is quick.
+  // Draws one tile's preview. Previews are cached on the item by page and turn, so
+  // reopening the window, or turning back, is quick.
   function arrDraw(it, tile){
     if(it.pages==null) return Promise.resolve();
-    if(it.kind==="image"){
-      if(!it.prevUrl) it.prevUrl = URL.createObjectURL(new Blob([it.bytes], {type:"image/jpeg"}));
-      arrPut(tile, it.prevUrl);
-      return Promise.resolve();
-    }
-    var idx=arrPreviewIndex(it);
-    if(it.arrPrev && it.arrPrev.page===idx){ arrPut(tile, it.arrPrev.url); return Promise.resolve(); }
-    return pmGetPdf(it).then(function(pdf){ return pdf.getPage(idx+1); }).then(function(page){
-      var vp0=page.getViewport({scale:1});
-      var vp=page.getViewport({scale: 640 / vp0.width});
-      var c=document.createElement("canvas");
-      c.width=Math.round(vp.width); c.height=Math.round(vp.height);
-      return page.render({canvasContext:c.getContext("2d"), viewport:vp}).promise.then(function(){
-        var url=c.toDataURL("image/jpeg", 0.8);
-        it.arrPrev={page:idx, url:url};
-        arrPut(tile, url);
-      });
+    var idx = it.kind==="image" ? 0 : arrPreviewIndex(it), turn=arrTurn(it, idx), key=idx+"/"+turn;
+    if(it.arrPrev && it.arrPrev.key===key){ arrPut(tile, it.arrPrev.url); return Promise.resolve(); }
+    return renderInto(it, idx, turn, 640).then(function(c){
+      var url=c.toDataURL("image/jpeg", 0.8);
+      it.arrPrev={key:key, url:url};
+      if(arrTurn(it, idx)===turn) arrPut(tile, url);   // not turned again meanwhile
     }).catch(function(){
       var pv=tile.querySelector(".apv");
       if(pv) pv.innerHTML='<span class="abad">Preview not available</span>';
@@ -1584,12 +1889,25 @@ else if (typeof exports === 'object')
     var t=document.createElement("div");
     t.className="atile"+(it.pages==null ? " bad" : "")+(it.pages!=null && countSel(it)===0 ? " none" : "");
     t.draggable=true; t.dataset.id=it.id; t.title=it.name;
+    var tools = it.pages==null ? '' :
+      '<span class="atools">' +
+        '<button class="atool rt" type="button" title="Rotate a quarter turn clockwise" aria-label="Rotate '+(it.kind==="image"?"image":"all pages")+'">'+ROT_ICO+'</button>' +
+        '<button class="atool zm" type="button" title="View full size" aria-label="View full size">'+MAG_ICO+'</button>' +
+      '</span>';
     t.innerHTML='<span class="apv">'+(it.pages==null ? '<span class="abad">Could not read</span>' : '<span class="aph"></span>')+'</span>'+
-      '<span class="anum"></span>'+
+      '<span class="anum"></span>'+ tools +
       '<span class="ameta">'+(it.kind==="image" ? imgIco() : pdfIco())+
         '<span class="atext"><span class="aname"></span><span class="apages"></span></span></span>';
     t.querySelector(".aname").textContent=it.name;
     t.querySelector(".apages").textContent=arrPagesText(it);
+
+    var rt=t.querySelector(".atool.rt"), zm=t.querySelector(".atool.zm");
+    if(rt) rt.addEventListener("click", function(ev){
+      ev.stopPropagation();
+      arrRot[it.id]=(((arrRot[it.id]||0)+90)%360);
+      arrDraw(it, t);
+    });
+    if(zm) zm.addEventListener("click", function(ev){ ev.stopPropagation(); openArrView(it); });
 
     t.addEventListener("dragstart", function(e){
       arrDragId=it.id; t.classList.add("dragging");
@@ -1650,12 +1968,14 @@ else if (typeof exports === 'object')
   function openArrange(){
     if(busy || items.length<2) return;
     arrOrder = items.map(function(x){ return x.id; });
+    arrRot = {};
     arrGrid.innerHTML="";
     items.forEach(function(it){ arrGrid.appendChild(arrTile(it)); });
     arrPaintSizes();
     arrNumber();
     arrSub.textContent = items.length + " files · drag to set the merge order";
     arrGrid.scrollTop = 0;
+    arrView.hidden = true;
     arrModal.hidden = false;
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", arrKey);
@@ -1663,20 +1983,112 @@ else if (typeof exports === 'object')
   }
 
   function closeArrange(){
+    if(!arrView.hidden) closeArrView();
     if(arrObserver){ try{ arrObserver.disconnect(); }catch(_){ } arrObserver=null; }
     arrModal.hidden = true;
     document.body.style.overflow = "";
     document.removeEventListener("keydown", arrKey);
     arrGrid.innerHTML = "";
-    arrOrder = null; arrDragId = null;
-    // Image previews hold a copy of the picture in memory; let it go until next time.
-    items.forEach(function(it){ if(it.prevUrl){ URL.revokeObjectURL(it.prevUrl); it.prevUrl=null; } });
+    arrOrder = null; arrRot = null; arrDragId = null;
+    // Decoded images take a lot of memory; let them go until next time.
+    items.forEach(function(it){
+      if(it._bmp){ it._bmp.then(function(b){ if(b && b.close) b.close(); }).catch(function(){}); it._bmp=null; }
+    });
   }
 
-  function arrKey(e){ if(e.key === "Escape"){ e.preventDefault(); closeArrange(); } }
+  // ---- full-size view (the magnifier) ----
+  // Shows one file large. For a PDF, Previous / Next step through the pages that will be
+  // merged (all its pages if none are selected). Zoom 1 means "fit to the window width".
+  var avItem=null, avList=null, avPos=0, avZoomF=1, avToken=0;
+  var AV_STEPS=[0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 4];
+
+  function paintArrView(){
+    var it=avItem; if(!it) return;
+    avLabel.textContent = it.name;
+    if(it.kind==="image"){
+      avState.textContent = "Image";
+    } else {
+      var p=avList[avPos], kept=countSel(it);
+      avState.textContent = "Page "+(p+1)+" of "+it.pages +
+        (kept>0 && kept<it.pages ? " · kept page "+(avPos+1)+" of "+avList.length : "");
+    }
+    avPrev.disabled = avPos<=0;
+    avNext.disabled = avPos>=avList.length-1;
+    avZoom.textContent = Math.round(avZoomF*100)+"%";                 // 100% = fitted to the window width
+    avOut.disabled = avZoomF<=AV_STEPS[0];
+    avIn.disabled = avZoomF>=AV_STEPS[AV_STEPS.length-1];
+  }
+
+  function drawArrView(){
+    var it=avItem, token=++avToken; if(!it) return;
+    var i=avList[avPos], turn=arrTurn(it, i);
+    var fitW=Math.max(300, (avBody.clientWidth || 1000) - 36), cssW=fitW*avZoomF;
+    var pxW=Math.min(5000, Math.round(cssW * Math.min(2, window.devicePixelRatio || 1)));
+    if(!avBody.querySelector("canvas")) avBody.innerHTML='<span class="pv-busy">Rendering…</span>';
+    renderInto(it, i, turn, pxW).then(function(c){
+      if(token!==avToken || avItem!==it) return;       // moved on already
+      c.style.width = cssW+"px"; c.style.height = "auto"; c.style.maxWidth = "none"; c.style.margin = "0 auto";
+      avBody.innerHTML=""; avBody.appendChild(c);
+    }).catch(function(err){
+      if(token!==avToken) return;
+      avBody.innerHTML='<span class="pv-busy">Could not show this page — '+((err&&err.message)||"unknown error")+'.</span>';
+    });
+  }
+
+  function openArrView(it){
+    if(!it || it.pages==null) return;
+    avItem=it;
+    if(it.kind==="image") avList=[0];
+    else { avList=selectedIndices(it); if(!avList.length){ avList=[]; for(var k=0;k<it.pages;k++) avList.push(k); } }
+    avPos=0; avZoomF=1;
+    avBody.innerHTML=""; avBody.scrollTop=0; avBody.scrollLeft=0;
+    avBody.style.justifyContent="flex-start";
+    arrView.hidden=false;
+    paintArrView(); drawArrView();
+  }
+  function closeArrView(){
+    avToken++;
+    arrView.hidden=true; avBody.innerHTML=""; avItem=null; avList=null;
+  }
+  function stepArrView(d){
+    if(!avItem) return;
+    var n=avPos+d; if(n<0 || n>=avList.length) return;
+    avPos=n; avBody.innerHTML=""; avBody.scrollTop=0; paintArrView(); drawArrView();
+  }
+  function zoomArrView(dir){
+    if(!avItem) return;
+    var z=avZoomF, k;
+    if(dir===0) z=1;
+    else if(dir>0){ for(k=0;k<AV_STEPS.length;k++){ if(AV_STEPS[k]>avZoomF+1e-6){ z=AV_STEPS[k]; break; } } }
+    else { for(k=AV_STEPS.length-1;k>=0;k--){ if(AV_STEPS[k]<avZoomF-1e-6){ z=AV_STEPS[k]; break; } } }
+    if(z===avZoomF) return;
+    avZoomF=z; paintArrView(); drawArrView();
+  }
+
+  avBack.addEventListener("click", closeArrView);
+  avClose.addEventListener("click", closeArrView);
+  avPrev.addEventListener("click", function(){ stepArrView(-1); });
+  avNext.addEventListener("click", function(){ stepArrView(1); });
+  avIn.addEventListener("click", function(){ zoomArrView(1); });
+  avOut.addEventListener("click", function(){ zoomArrView(-1); });
+  avFit.addEventListener("click", function(){ zoomArrView(0); });
+
+  function arrKey(e){
+    if(!arrView.hidden){
+      if(e.key === "Escape"){ e.preventDefault(); closeArrView(); }
+      else if(e.key === "ArrowLeft"){ e.preventDefault(); stepArrView(-1); }
+      else if(e.key === "ArrowRight"){ e.preventDefault(); stepArrView(1); }
+      else if(e.key === "+" || e.key === "="){ e.preventDefault(); zoomArrView(1); }
+      else if(e.key === "-" || e.key === "_"){ e.preventDefault(); zoomArrView(-1); }
+      else if(e.key === "0"){ e.preventDefault(); zoomArrView(0); }
+      return;
+    }
+    if(e.key === "Escape"){ e.preventDefault(); closeArrange(); }
+  }
 
   // Apply behaves exactly like dragging the rows: the table, the numbers and the order
-  // line follow the new order, and any merged result already built is cleared.
+  // line follow the new order, and any merged result already built is cleared. Turns
+  // made here are added to every page of that file.
   function applyArrange(){
     if(!arrOrder) return;
     var before = items.map(function(x){ return x.id; }).join(",");
@@ -1684,6 +2096,14 @@ else if (typeof exports === 'object')
     arrOrder.forEach(function(id){ var it=itemById(id); if(it) next.push(it); });
     items.forEach(function(it){ if(next.indexOf(it)<0) next.push(it); });   // nothing can go missing
     var changed = next.map(function(x){ return x.id; }).join(",") !== before;
+    var turns = arrRot || {};
+    next.forEach(function(it){
+      var d = turns[it.id] || 0;
+      if(!d || it.pages==null) return;
+      var n = it.kind==="image" ? 1 : it.pages, r=[];
+      for(var k=0;k<n;k++) r.push((rotOf(it,k)+d)%360);
+      it.rot = r; it.downloaded = false; changed = true;
+    });
     closeArrange();
     if(changed){ items=next; mergedBlob=null; hideResult(); renderRows(); }
   }
@@ -1695,6 +2115,23 @@ else if (typeof exports === 'object')
   Array.prototype.forEach.call(arrSizes.children, function(b){
     b.addEventListener("click", function(){ arrSize = b.dataset.size; arrPaintSizes(); });
   });
+
+  // ---------------- Help ----------------
+  function openHelp(e){
+    if(e) e.preventDefault();
+    helpModal.hidden=false; document.body.style.overflow="hidden";
+    document.addEventListener("keydown", helpKey);
+    helpOk.focus();
+  }
+  function closeHelp(){
+    helpModal.hidden=true;
+    if(pageModal.hidden && arrModal.hidden) document.body.style.overflow="";
+    document.removeEventListener("keydown", helpKey);
+  }
+  function helpKey(e){ if(e.key === "Escape"){ e.preventDefault(); closeHelp(); } }
+  helpBtn.addEventListener("click", openHelp);
+  helpClose.addEventListener("click", closeHelp);
+  helpOk.addEventListener("click", closeHelp);
 
   function clearOver(){ Array.prototype.forEach.call(rows.querySelectorAll(".drag-over"), function(el){ el.classList.remove("drag-over"); }); }
 
@@ -1858,36 +2295,62 @@ else if (typeof exports === 'object')
     orderNote.hidden=false;
   }
 
-  function hideResult(){ mergeResult.hidden=true; masterBytes=null; level="none"; paintPills(); }
+  function hideResult(){ mergeResult.hidden=true; masterBytes=null; baseBytes=null; mergedUsable=null; level="none"; paintPills(); }
 
-  function doMerge(){
-    var usable=items.filter(function(x){ return x.bytes && x.pages!=null && countSel(x)>0; });
-    if(usable.length<1) return;
-    busy=true; mergeBtn.disabled=true; working.hidden=false; working.textContent="Merging…";
+  // The merged file before page numbers and compression (baseBytes), and the files it was
+  // built from (mergedUsable), kept so the options in the result banner can rebuild it.
+  var baseBytes=null, mergedUsable=null, pageNums=false;
+
+  // Builds the merged PDF from the given files, in order: each PDF's selected pages (with
+  // any rotation), and each image as a page laid out by the Image pages setting.
+  function buildMerged(usable){
     var out;
-    PDFLib.PDFDocument.create().then(function(o){
+    return PDFLib.PDFDocument.create().then(function(o){
       out=o;
       var chain=Promise.resolve();
       usable.forEach(function(it){
         chain=chain.then(function(){
           if(it.kind==="image") return addImagePage(out, it);
+          var idxs=selectedIndices(it);
           return loadDoc(new Uint8Array(it.bytes.slice(0))).then(function(src){
-            return out.copyPages(src, selectedIndices(it)).then(function(pgs){ pgs.forEach(function(pg){ out.addPage(pg); }); });
+            return out.copyPages(src, idxs).then(function(pgs){
+              pgs.forEach(function(pg,k){ out.addPage(pg); applyRot(pg, rotOf(it, idxs[k])); });
+            });
           });
         });
       });
       return chain;
-    }).then(function(){ return out.save(); }).then(function(bytes){
-      masterBytes=bytes;
+    }).then(function(){ return out.save(); });
+  }
+
+  // "2026-10-04 Combined.pdf" - the date the file was made, year first so files sort in
+  // date order in a folder, ready for the rest of the name to be typed in.
+  function datedName(){
+    var d=new Date();
+    function two(n){ return (n<10?"0":"")+n; }
+    return d.getFullYear()+"-"+two(d.getMonth()+1)+"-"+two(d.getDate())+" Combined.pdf";
+  }
+
+  function doMerge(){
+    var usable=items.filter(function(x){ return x.bytes && x.pages!=null && countSel(x)>0; });
+    if(usable.length<1) return;
+    busy=true; mergeBtn.disabled=true; working.hidden=false; working.textContent="Merging…";
+    buildMerged(usable).then(function(bytes){
+      baseBytes=bytes; mergedUsable=usable;
       masterPages=usable.reduce(function(s,x){ return s+countSel(x); }, 0);
       masterFiles=usable.length;
+      return withNumbers(bytes);
+    }).then(function(bytes){
+      masterBytes=bytes;
       level="none"; paintPills(); pillsEnabled(true);
       mrcNoteText.textContent=NOTE_NONE;
       mergedBlob=new Blob([bytes], {type:"application/pdf"});
       // With a single file there is no merge, so the original name is kept
       // (an image keeps its name with .pdf in place of .jpg / .png).
-      mergedName = usable.length===1 ? pdfNameFor(usable[0]) : "merged.pdf";
+      mergedName = usable.length===1 ? pdfNameFor(usable[0]) : datedName();
       mrName.textContent=mergedName;
+      optImages.hidden = !usable.some(function(x){ return x.kind==="image"; });
+      paintOpts(); optsEnabled(true);
       setSub(mergedBlob.size, null);
       mergeResult.hidden=false;
       busy=false; working.hidden=true; mergeBtn.disabled=false;
@@ -1896,6 +2359,89 @@ else if (typeof exports === 'object')
       mergeBtn.disabled=false;
     });
   }
+
+  // ---------- page numbers ----------
+  // "Page 1 of 12" in small grey text at the bottom centre of each page. Pages can carry
+  // a rotation, so the text is placed and turned to sit at the bottom of the page as it
+  // is actually seen, the right way up.
+  function withNumbers(bytes){ return pageNums ? stampNumbers(bytes) : Promise.resolve(bytes); }
+  function stampNumbers(bytes){
+    return PDFLib.PDFDocument.load(bytes).then(function(doc){
+      return doc.embedFont(PDFLib.StandardFonts.Helvetica).then(function(font){
+        var pages=doc.getPages(), n=pages.length, size=9, gap=16, col=PDFLib.rgb(0.42,0.47,0.45);
+        pages.forEach(function(pg, i){
+          var txt="Page "+(i+1)+" of "+n, tw=font.widthOfTextAtSize(txt, size);
+          var b=pg.getCropBox(), bx=b.x, by=b.y, w=b.width, h=b.height;
+          var r=(((pg.getRotation().angle||0) % 360) + 360) % 360, o;
+          if(r===90)       o={x:bx+w-gap,      y:by+h/2-tw/2, a:90};
+          else if(r===180) o={x:bx+w/2+tw/2,   y:by+h-gap,    a:180};
+          else if(r===270) o={x:bx+gap,        y:by+h/2+tw/2, a:270};
+          else             o={x:bx+w/2-tw/2,   y:by+gap,      a:0};
+          pg.drawText(txt, {x:o.x, y:o.y, size:size, font:font, color:col, rotate:PDFLib.degrees(o.a)});
+        });
+        return doc.save();
+      });
+    });
+  }
+
+  // ---------- result banner options (Image pages, Page numbers) ----------
+  // Changing either rebuilds the result and then re-applies the compression level that was
+  // chosen, so the three settings can be changed in any order.
+  function paintOpts(){
+    Array.prototype.forEach.call(imgModePills.children, function(b){ b.classList.toggle("is-on", b.dataset.mode===imgOpts.mode); });
+    Array.prototype.forEach.call(numPills.children, function(b){ b.classList.toggle("is-on", (b.dataset.num==="on")===pageNums); });
+    imgPct.value = imgOpts.pct;
+    imgPctVal.textContent = imgOpts.pct + "%";
+    imgSizeWrap.classList.toggle("off", imgOpts.mode==="edge");
+    imgSizeWrap.title = imgOpts.mode==="edge" ? "Not used for Edge to edge - the image always fills the page" : "How much of the A4 page each image fills";
+  }
+  function optsEnabled(on){
+    Array.prototype.forEach.call(imgModePills.children, function(b){ b.disabled=!on; });
+    Array.prototype.forEach.call(numPills.children, function(b){ b.disabled=!on; });
+    imgPct.disabled = !on || imgOpts.mode==="edge";
+  }
+
+  function rebuildResult(reMerge){
+    if(busy || !baseBytes || !mergedUsable) return;
+    var prev=level, usable=mergedUsable, token=baseBytes, nb=null;
+    busy=true; optsEnabled(false); pillsEnabled(false); mergeBtn.disabled=true;
+    mrcNoteText.textContent="Updating…";
+    (reMerge ? buildMerged(usable) : Promise.resolve(baseBytes)).then(function(b){
+      if(baseBytes!==token) return null;               // cleared or replaced meanwhile
+      baseBytes=b; nb=b;
+      return withNumbers(b);
+    }).then(function(m){
+      if(!m || baseBytes!==nb) return;
+      masterBytes=m;
+      level="none"; paintPills();
+      mergedBlob=new Blob([m.slice(0)], {type:"application/pdf"});
+      setSub(mergedBlob.size, null);
+      mrcNoteText.textContent=NOTE_NONE;
+    }).catch(function(err){
+      level="none"; paintPills();
+      if(masterBytes){ mergedBlob=new Blob([masterBytes.slice(0)], {type:"application/pdf"}); setSub(mergedBlob.size, null); }
+      mrcNoteText.textContent="Could not update the file — "+((err&&err.message)||"unknown error")+".";
+    }).then(function(){
+      busy=false; optsEnabled(true); pillsEnabled(true); updateActions();
+      if(prev!=="none" && masterBytes && nb && baseBytes===nb) setLevel(prev);
+    });
+  }
+
+  imgModePills.addEventListener("click", function(e){
+    var b=e.target.closest(".mrc-pill"); if(!b || b.disabled || busy) return;
+    if(imgOpts.mode===b.dataset.mode) return;
+    imgOpts.mode=b.dataset.mode; paintOpts(); rebuildResult(true);
+  });
+  imgPct.addEventListener("input", function(){ imgPctVal.textContent = imgPct.value + "%"; });
+  imgPct.addEventListener("change", function(){
+    var v=Number(imgPct.value); if(busy || v===imgOpts.pct) { paintOpts(); return; }
+    imgOpts.pct=v; paintOpts(); rebuildResult(true);
+  });
+  numPills.addEventListener("click", function(e){
+    var b=e.target.closest(".mrc-pill"); if(!b || b.disabled || busy) return;
+    var want = b.dataset.num==="on"; if(want===pageNums) return;
+    pageNums=want; paintOpts(); rebuildResult(false);
+  });
 
   // ---------- compression ----------
   // Recompresses the JPEG images already embedded in the PDF. Text, vectors and
@@ -2074,10 +2620,11 @@ else if (typeof exports === 'object')
       out=o;
       // An image row becomes a one-page PDF on its own A4 page.
       if(it.kind==="image") return addImagePage(out, it).then(function(){ return out.save(); });
+      var idxs=selectedIndices(it);
       return loadDoc(new Uint8Array(it.bytes.slice(0))).then(function(src){
-        return out.copyPages(src, selectedIndices(it));
+        return out.copyPages(src, idxs);
       }).then(function(pgs){
-        pgs.forEach(function(pg){ out.addPage(pg); });
+        pgs.forEach(function(pg,k){ out.addPage(pg); applyRot(pg, rotOf(it, idxs[k])); });
         return out.save();
       });
     }).then(function(bytes){
