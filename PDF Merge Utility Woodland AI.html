@@ -1,13 +1,24 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — PDF MERGE UTILITY
-  Build 2.3
+  Build 2.4
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop PDFs, JPGs and PNGs anywhere on the page (or paste a screenshot with Ctrl+V),
   drag the rows to set the order, and combine them into a single PDF. Each image
   becomes its own A4 page. Locked PDFs are unlocked automatically. The result can be
   compressed (None / Standard / Smaller) by recompressing the images inside it,
   which leaves text selectable and searchable.
+
+  2.4 changes:
+   - Sharper full-size pages. The magnifier, and the full page view in Choose pages, now
+     draw each page at double the screen's own detail and let the browser scale it down,
+     which smooths the edges of text noticeably (before, a page at 100% was drawn at
+     exactly one dot per screen dot and small text could look jagged). Very large pages
+     are capped at a sensible size so memory use stays reasonable.
+   - The magnifier's zoom slider is replaced by a row of zoom buttons: 50%, 75%, 100%,
+     125%, 150%, 200%, 300% and 400%, with the current one highlighted, followed by Fit
+     (back to 100%, the width of the window). The - and + keys, and Ctrl + mouse wheel,
+     step to the next button up or down; 0 is Fit.
 
   2.3 changes:
    - The magnifier's zoom is now a slider. 100% (the page fitted to the window width) sits
@@ -556,8 +567,12 @@
     border:0;border-left:1px solid var(--line);padding:6px 11px;cursor:pointer;min-width:34px;}
   .zoomctl button:first-child{border-left:0;}
   .zoomctl button:hover{background:#eef3f0;}
-  .zoomctl .zslide{display:flex;align-items:center;padding:0 10px;}
-  .zoomctl input[type=range]{width:200px;margin:0;accent-color:var(--forest);cursor:pointer;}
+  .zchips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .zchip{font-family:var(--sans);font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;
+    border-radius:7px;padding:6px 9px;color:var(--text);cursor:pointer;font-variant-numeric:tabular-nums;}
+  .zchip:hover{background:#eef3f0;}
+  .zchip.on{background:var(--forest);border-color:var(--forest);color:#fff;}
+  .zchip.fit{margin-left:4px;}
   .zoomctl .zv{font-size:12px;color:var(--muted);padding:0 10px;border-left:1px solid var(--line);
     font-variant-numeric:tabular-nums;min-width:52px;text-align:center;}
 
@@ -629,7 +644,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">PDF MERGE UTILITY</span>
-    <a class="help" id="helpBtn" href="#" role="button" title="PDF Merge Utility — Build 2.3">
+    <a class="help" id="helpBtn" href="#" role="button" title="PDF Merge Utility — Build 2.4">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -789,7 +804,7 @@
     </section>
   </main>
 
-  <footer><span class="build">Build 2.3</span></footer>
+  <footer><span class="build">Build 2.4</span></footer>
 </div>
 
 <div class="modal help-modal" id="helpModal" hidden>
@@ -798,7 +813,7 @@
     <div class="modal-head">
       <span>
         <span class="pm-title" id="helpTitle">How to use the PDF Merge Utility</span>
-        <span class="pm-sub" id="helpSub">Build 2.3</span>
+        <span class="pm-sub" id="helpSub">Build 2.4</span>
       </span>
       <button class="pm-close" id="helpClose" type="button" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
@@ -822,8 +837,8 @@
         <li><b>Preview &amp; Arrange</b> opens a large tile for each file so you can see what it is. Drag the tiles into
           order (left to right, then top to bottom) and press <b>Apply</b>. Cancel leaves the order as it was.</li>
         <li>Hover over a tile and click the <b>magnifier</b> to see the file full size. For a PDF, Previous and Next step
-          through its pages. Drag the <b>zoom slider</b> (100% is in the middle) or hold <b>Ctrl</b> and use the
-          mouse wheel to zoom; <b>Fit</b> returns to the width of the window.</li>
+          through its pages. Pick a <b>zoom size</b> from 50% to 400% at the top, or hold <b>Ctrl</b> and use the
+          mouse wheel; <b>Fit</b> returns to the width of the window.</li>
         <li>The line above the table always says which file will come first and which last.</li>
       </ul>
 
@@ -890,11 +905,16 @@
         <span class="pv-label" id="avLabel">File</span>
         <span class="pv-state" id="avState"></span>
         <span class="pv-actions">
-          <span class="zoomctl">
-            <span class="zslide"><input type="range" id="avSlider" min="0" max="100" step="1" value="50"
-              aria-label="Zoom" title="Zoom: 100% in the middle, 50% at the left, 400% at the right"></span>
-            <span class="zv" id="avZoom">100%</span>
-            <button type="button" id="avFit" title="Fit to the window width (0)">Fit</button>
+          <span class="zchips" id="avChips" role="group" aria-label="Zoom">
+            <button class="zchip" type="button" data-z="0.5">50%</button>
+            <button class="zchip" type="button" data-z="0.75">75%</button>
+            <button class="zchip on" type="button" data-z="1">100%</button>
+            <button class="zchip" type="button" data-z="1.25">125%</button>
+            <button class="zchip" type="button" data-z="1.5">150%</button>
+            <button class="zchip" type="button" data-z="2">200%</button>
+            <button class="zchip" type="button" data-z="3">300%</button>
+            <button class="zchip" type="button" data-z="4">400%</button>
+            <button class="zchip fit" type="button" id="avFit" title="Fit to the window width (0)">Fit</button>
           </span>
           <button class="pm-close" id="avClose" type="button" aria-label="Back to files">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
@@ -1271,8 +1291,8 @@ else if (typeof exports === 'object')
   var arrCancel=document.getElementById("arrCancel"), arrApply=document.getElementById("arrApply");
   var arrView=document.getElementById("arrView"), avBack=document.getElementById("avBack");
   var avLabel=document.getElementById("avLabel"), avState=document.getElementById("avState");
-  var avSlider=document.getElementById("avSlider"), avFit=document.getElementById("avFit");
-  var avZoom=document.getElementById("avZoom"), avClose=document.getElementById("avClose");
+  var avChips=document.getElementById("avChips"), avFit=document.getElementById("avFit");
+  var avClose=document.getElementById("avClose");
   var avBody=document.getElementById("avBody"), avPrev=document.getElementById("avPrev"), avNext=document.getElementById("avNext");
   var optImages=document.getElementById("optImages"), imgModePills=document.getElementById("imgModePills");
   var imgPct=document.getElementById("imgPct"), imgPctVal=document.getElementById("imgPctVal");
@@ -1670,6 +1690,7 @@ else if (typeof exports === 'object')
       var rot = ((page.rotate||0) + (pmRot[i]||0)) % 360;
       var vp0 = page.getViewport({scale:1, rotation:rot});
       var target = Math.min(1600, Math.max(900, Math.round(pvBody.clientWidth || 1000)));
+      target = capWidth(Math.round(target * Math.max(2, window.devicePixelRatio || 1)), vp0.width, vp0.height);   // double detail, shown scaled down
       var vp = page.getViewport({scale: target / vp0.width, rotation:rot});
       var c = document.createElement("canvas");
       c.width = Math.round(vp.width); c.height = Math.round(vp.height);
@@ -1840,10 +1861,16 @@ else if (typeof exports === 'object')
   }
 
   // Draws page i of an item, turned by `turn` degrees, into a new canvas pxWidth wide.
+  // No drawing is allowed to exceed MAX_PX dots in total (about 128 MB of memory), so very
+  // large pages at high zoom stay manageable; below that, the requested width is used.
+  var MAX_PX = 32000000;
+  function capWidth(pxWidth, w, h){ return Math.min(pxWidth, Math.floor(Math.sqrt(MAX_PX * w / h))); }
+
   function renderInto(it, i, turn, pxWidth){
     if(it.kind==="image"){
       return arrBitmap(it).then(function(bmp){
         var side=(turn%180)!==0, rw=side?bmp.height:bmp.width, rh=side?bmp.width:bmp.height;
+        pxWidth=capWidth(pxWidth, rw, rh);
         var c=document.createElement("canvas");
         c.width=Math.max(1,Math.round(pxWidth)); c.height=Math.max(1,Math.round(pxWidth*rh/rw));
         var g=c.getContext("2d"), k=c.width/rw;
@@ -1855,6 +1882,7 @@ else if (typeof exports === 'object')
     return pmGetPdf(it).then(function(pdf){ return pdf.getPage(i+1); }).then(function(page){
       var rot=((page.rotate||0) + turn) % 360;
       var vp0=page.getViewport({scale:1, rotation:rot});
+      pxWidth=capWidth(pxWidth, vp0.width, vp0.height);
       var vp=page.getViewport({scale: pxWidth / vp0.width, rotation:rot});
       var c=document.createElement("canvas");
       c.width=Math.round(vp.width); c.height=Math.round(vp.height);
@@ -2011,7 +2039,7 @@ else if (typeof exports === 'object')
   // Shows one file large. For a PDF, Previous / Next step through the pages that will be
   // merged (all its pages if none are selected). Zoom 1 means "fit to the window width".
   var avItem=null, avList=null, avPos=0, avZoomF=1, avToken=0;
-  var AV_STEPS=[0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 4];
+  var AV_STEPS=[0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];         // the zoom buttons, in order
 
   function paintArrView(){
     var it=avItem; if(!it) return;
@@ -2025,15 +2053,18 @@ else if (typeof exports === 'object')
     }
     avPrev.disabled = avPos<=0;
     avNext.disabled = avPos>=avList.length-1;
-    avZoom.textContent = Math.round(avZoomF*100)+"%";                 // 100% = fitted to the window width
-    avSlider.value = zoomToPos(avZoomF);
+    Array.prototype.forEach.call(avChips.querySelectorAll(".zchip[data-z]"), function(b){   // 100% = window width
+      b.classList.toggle("on", Math.abs(Number(b.dataset.z)-avZoomF)<1e-6);
+    });
   }
 
   function drawArrView(){
     var it=avItem, token=++avToken; if(!it) return;
     var i=avList[avPos], turn=arrTurn(it, i);
     var fitW=Math.max(300, (avBody.clientWidth || 1000) - 36), cssW=fitW*avZoomF;
-    var pxW=Math.min(5000, Math.round(cssW * Math.min(2, window.devicePixelRatio || 1)));
+    // Drawn at double the screen's own detail (more on high-resolution screens), then
+    // scaled down by the browser, so text edges come out smooth.
+    var pxW=Math.round(cssW * Math.max(2, window.devicePixelRatio || 1));
     if(!avBody.querySelector("canvas")) avBody.innerHTML='<span class="pv-busy">Rendering…</span>';
     renderInto(it, i, turn, pxW).then(function(c){
       if(token!==avToken || avItem!==it) return;       // moved on already
@@ -2081,40 +2112,20 @@ else if (typeof exports === 'object')
   avNext.addEventListener("click", function(){ stepArrView(1); });
   avFit.addEventListener("click", function(){ zoomArrView(0); });
 
-  // ---- zoom slider ----
-  // Slider position 0..100 with 100% zoom in the middle (50). Each half moves at an even
-  // pace: 0..50 runs 50% to 100%, 50..100 runs 100% to 400% (so 200% sits at 75).
-  var AV_MIN=0.5, AV_MAX=4;
-  function posToZoom(p){
-    p=Math.max(0, Math.min(100, Number(p)));
-    return p<=50 ? AV_MIN*Math.pow(1/AV_MIN, p/50) : Math.pow(AV_MAX, (p-50)/50);
-  }
-  function zoomToPos(z){
-    z=Math.max(AV_MIN, Math.min(AV_MAX, z));
-    return z<=1 ? 50*Math.log(z/AV_MIN)/Math.log(1/AV_MIN) : 50 + 50*Math.log(z)/Math.log(AV_MAX);
-  }
-  // While zooming continuously, the page already on screen is stretched straight away and
-  // then redrawn sharp a moment after the zooming stops.
-  var avSharpTimer=null;
-  function liveZoom(z, sharpAfter){
-    if(!avItem) return;
-    z=Math.max(AV_MIN, Math.min(AV_MAX, z));
-    if(Math.abs(z-1)<0.03) z=1;                       // settle on exactly 100% near the middle
-    avZoomF=z;
-    avZoom.textContent = Math.round(z*100)+"%";
-    var c=avBody.querySelector("canvas");
-    if(c){ var fitW=Math.max(300, (avBody.clientWidth || 1000) - 36); c.style.width = (fitW*z)+"px"; }
-    clearTimeout(avSharpTimer);
-    if(sharpAfter!=null) avSharpTimer=setTimeout(function(){ paintArrView(); drawArrView(); }, sharpAfter);
-  }
-  avSlider.addEventListener("input", function(){ liveZoom(posToZoom(avSlider.value), null); });
-  avSlider.addEventListener("change", function(){ liveZoom(posToZoom(avSlider.value), 0); });
+  // ---- zoom buttons ----
+  avChips.addEventListener("click", function(e){
+    var b=e.target.closest(".zchip[data-z]"); if(!b || !avItem) return;
+    var z=Number(b.dataset.z); if(z===avZoomF) return;
+    avZoomF=z; paintArrView(); drawArrView();
+  });
+  // Ctrl + mouse wheel steps to the next zoom button up or down (one step per moment, so a
+  // fast spin of the wheel doesn't race to the end). A plain wheel still scrolls the page.
+  var avWheelAt=0;
   avBody.addEventListener("wheel", function(e){
-    if(!e.ctrlKey || !avItem) return;               // plain wheel still scrolls the page
+    if(!e.ctrlKey || !avItem) return;
     e.preventDefault();
-    var z = avZoomF * (e.deltaY < 0 ? 1.1 : 1/1.1);
-    liveZoom(z, 250);
-    avSlider.value = zoomToPos(avZoomF);
+    var now=Date.now(); if(now-avWheelAt<180) return; avWheelAt=now;
+    zoomArrView(e.deltaY < 0 ? 1 : -1);
   }, {passive:false});
 
   function arrKey(e){
