@@ -1,13 +1,34 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — PDF MERGE UTILITY
-  Build 2.0
+  Build 2.1
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop PDFs, JPGs and PNGs anywhere on the page (or paste a screenshot with Ctrl+V),
   drag the rows to set the order, and combine them into a single PDF. Each image
   becomes its own A4 page. Locked PDFs are unlocked automatically. The result can be
   compressed (None / Standard / Smaller) by recompressing the images inside it,
   which leaves text selectable and searchable.
+
+  2.1 changes:
+   - Preview & Arrange. A new button beside the main button opens a full-screen window
+     with one large tile per file, so you can see what each one is while putting them in
+     order. A PDF's tile shows the first page you have kept (if page 1 is deselected in
+     "Choose pages", it shows the next kept page); an image's tile shows the image; a file
+     that could not be read shows a grey "Could not read" tile. Each tile carries its
+     position number, its name and its page count. Drag a tile to where you want it - a
+     green bar shows where it will land - and the numbers update. Tile size is Small /
+     Medium / Large, opening on Large. Apply sets the new order in the table; Cancel, the
+     X or Escape leaves it as it was. Applying a new order behaves exactly like dragging
+     the rows: the order line updates and any merged result already built is cleared.
+     Previews are drawn as they come into view and remembered, so reopening is quick.
+     The button is available once there are two or more items in the list.
+   - Main button wording now says what will actually happen:
+       all PDFs (two or more)          -> "Merge PDFs"   (unchanged)
+       a mix of PDFs and images        -> "Merge to PDF"
+       images only (one or more)       -> "Create PDF"
+       one PDF                         -> "Compress" / "Create file" (unchanged)
+   - The result line said "1 pages" when the finished file had a single page. It now says
+     "1 page", and "from 1 file" is handled the same way.
 
   2.0 changes:
    - Images can now be merged alongside PDFs. JPG and PNG files are accepted by dropping
@@ -436,6 +457,45 @@
   .remove svg{width:15px;height:15px;display:block;}
   .remove:hover{color:#8a2e22;}
   .btn-all:disabled{opacity:.5;cursor:default;}
+  .btn-clear:disabled{opacity:.5;cursor:default;}
+  .btn-clear:disabled:hover{background:#fff;}
+
+  /* ---------- Preview & Arrange (modal) ---------- */
+  .arr-grid{flex:1 1 auto;overflow-y:auto;padding:20px 22px;display:grid;gap:20px;
+    grid-template-columns:repeat(3,1fr);align-content:start;align-items:start;grid-auto-rows:max-content;}
+  .arr-grid.sz-m{grid-template-columns:repeat(4,1fr);}
+  .arr-grid.sz-s{grid-template-columns:repeat(6,1fr);}
+  @media (max-width:900px){
+    .arr-grid,.arr-grid.sz-m{grid-template-columns:repeat(2,1fr);}
+    .arr-grid.sz-s{grid-template-columns:repeat(3,1fr);}
+  }
+  .atile{position:relative;display:block;background:#fff;border:2px solid var(--line);border-radius:10px;
+    cursor:grab;user-select:none;-webkit-user-select:none;transition:border-color .12s ease;}
+  .atile:hover{border-color:var(--pine);}
+  .atile:active{cursor:grabbing;}
+  .atile.dragging{opacity:.35;}
+  .atile.drop-before{box-shadow:-6px 0 0 0 var(--pine);}
+  .atile.drop-after{box-shadow:6px 0 0 0 var(--pine);}
+  .atile .apv{display:flex;align-items:center;justify-content:center;overflow:hidden;
+    height:420px;padding:12px;background:#eef1ef;border-radius:8px 8px 0 0;}
+  .arr-grid.sz-m .atile .apv{height:300px;}
+  .arr-grid.sz-s .atile .apv{height:190px;padding:8px;}
+  .atile .apv img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;background:#fff;
+    box-shadow:0 1px 5px rgba(0,0,0,.18);pointer-events:none;}
+  .atile .aph{display:block;width:70%;height:100%;
+    background:repeating-linear-gradient(45deg,#f2f5f3,#f2f5f3 8px,#e6ebe8 8px,#e6ebe8 16px);}
+  .atile .abad{font-size:13px;font-weight:600;color:#8a2e22;}
+  .atile .anum{position:absolute;top:9px;left:9px;min-width:28px;height:28px;padding:0 8px;border-radius:14px;
+    background:var(--forest);color:#fff;font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  .atile .ameta{display:flex;align-items:center;gap:8px;padding:9px 11px;border-top:1px solid var(--line);min-width:0;}
+  .atile .ameta .pdf-ico{width:16px;height:20px;}
+  .atile .atext{display:flex;flex-direction:column;min-width:0;}
+  .atile .aname{font-weight:600;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .atile .apages{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .atile.bad .aname{color:#8a2e22;}
+  .atile.none .apv img{opacity:.45;}
+
   .order-note{margin:16px 0 4px;font-size:12.5px;color:var(--muted);line-height:1.5;
     display:flex;gap:8px;align-items:flex-start;}
   .order-note[hidden]{display:none;}
@@ -483,7 +543,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">PDF MERGE UTILITY</span>
-    <a class="help" title="PDF Merge Utility — Build 2.0">
+    <a class="help" title="PDF Merge Utility — Build 2.1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -547,6 +607,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l8 4-8 4-8-4 8-4z"/><path d="M4 12l8 4 8-4"/></svg>
             <span id="mergeBtnLabel">Merge PDFs</span>
           </button>
+          <button class="btn-clear" id="arrangeBtn" type="button" disabled title="Add two or more files to arrange them">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+            Preview &amp; Arrange
+          </button>
           <button class="btn-clear" id="clearAll" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>
             Clear
@@ -609,7 +673,38 @@
     </section>
   </main>
 
-  <footer><span class="build">Build 2.0</span></footer>
+  <footer><span class="build">Build 2.1</span></footer>
+</div>
+
+<div class="modal" id="arrModal" hidden>
+  <div class="modal-back"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="arrTitle">
+    <div class="modal-head">
+      <span>
+        <span class="pm-title" id="arrTitle">Preview &amp; Arrange</span>
+        <span class="pm-sub" id="arrSub"></span>
+      </span>
+      <button class="pm-close" id="arrClose" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-bar">
+      <span class="pb-label">Merge order runs left to right, then top to bottom.</span>
+      <span class="sizes" id="arrSizes" style="margin-left:auto;">
+        <button class="szbtn" type="button" data-size="s">Small</button>
+        <button class="szbtn" type="button" data-size="m">Medium</button>
+        <button class="szbtn is-on" type="button" data-size="l">Large</button>
+      </span>
+    </div>
+    <div class="arr-grid" id="arrGrid"></div>
+    <div class="modal-foot">
+      <p class="modal-note" id="arrNote">Drag a file to where you want it in the merge. Nothing changes until you press Apply.</p>
+      <span class="foot-actions">
+        <button class="btn-cancel" id="arrCancel" type="button">Cancel</button>
+        <button class="btn-apply" id="arrApply" type="button">Apply</button>
+      </span>
+    </div>
+  </div>
 </div>
 
 <div class="modal" id="pageModal" hidden>
@@ -958,8 +1053,13 @@ else if (typeof exports === 'object')
   var pvState=document.getElementById("pvState"), pvToggle=document.getElementById("pvToggle");
   var pvBody=document.getElementById("pvBody"), pvPrev=document.getElementById("pvPrev");
   var pvNext=document.getElementById("pvNext");
+  var arrangeBtn=document.getElementById("arrangeBtn"), arrModal=document.getElementById("arrModal");
+  var arrSub=document.getElementById("arrSub"), arrGrid=document.getElementById("arrGrid");
+  var arrSizes=document.getElementById("arrSizes"), arrClose=document.getElementById("arrClose");
+  var arrCancel=document.getElementById("arrCancel"), arrApply=document.getElementById("arrApply");
 
   var items=[], uid=0, busy=false, mergedBlob=null, mergedName="merged.pdf", dragId=null;
+  var arrDragId=null;                 // set while a tile in Preview & Arrange is being dragged
 
   // ---- compression state ----
   // masterBytes is the untouched merged file. Every level is produced FROM the
@@ -981,13 +1081,15 @@ else if (typeof exports === 'object')
   // is being dragged to reorder it (dragId is set) they stand aside completely: the row
   // marks the drag as a "move", and if these handlers then marked the same drag as a
   // "copy" the browser would treat the two as incompatible and refuse the drop, which
-  // is what stopped reordering from working before 1.11.
+  // is what stopped reordering from working before 1.11. The same applies to dragging a
+  // tile in Preview & Arrange (arrDragId is set). Files dropped onto the page while that
+  // window is open are ignored, so the window's working order cannot go out of date.
   var dragDepth=0;
-  window.addEventListener("dragenter", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth++; if(!busy) document.body.classList.add("drag-active"); });
-  window.addEventListener("dragover",  function(e){ if(dragId!=null) return; e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="copy"; });
-  window.addEventListener("dragleave", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth--; if(dragDepth<=0){ dragDepth=0; document.body.classList.remove("drag-active"); } });
-  window.addEventListener("drop", function(e){ if(dragId!=null) return; e.preventDefault(); dragDepth=0; document.body.classList.remove("drag-active");
-    if(busy) return; var dt=e.dataTransfer; if(dt && dt.files && dt.files.length) addFiles(dt.files); });
+  window.addEventListener("dragenter", function(e){ if(dragId!=null || arrDragId!=null) return; e.preventDefault(); dragDepth++; if(!busy) document.body.classList.add("drag-active"); });
+  window.addEventListener("dragover",  function(e){ if(dragId!=null || arrDragId!=null) return; e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="copy"; });
+  window.addEventListener("dragleave", function(e){ if(dragId!=null || arrDragId!=null) return; e.preventDefault(); dragDepth--; if(dragDepth<=0){ dragDepth=0; document.body.classList.remove("drag-active"); } });
+  window.addEventListener("drop", function(e){ if(dragId!=null || arrDragId!=null) return; e.preventDefault(); dragDepth=0; document.body.classList.remove("drag-active");
+    if(busy || !arrModal.hidden) return; var dt=e.dataTransfer; if(dt && dt.files && dt.files.length) addFiles(dt.files); });
 
   drop.addEventListener("click", function(){ if(!busy) fileInput.click(); });
   drop.addEventListener("keydown", function(e){ if((e.key==="Enter"||e.key===" ") && !busy){ e.preventDefault(); fileInput.click(); } });
@@ -1095,7 +1197,7 @@ else if (typeof exports === 'object')
   // page picker is open, and while something is already being read or built.
   var pasteCount=0;
   document.addEventListener("paste", function(e){
-    if(busy || !pageModal.hidden) return;
+    if(busy || !pageModal.hidden || !arrModal.hidden) return;
     var cd=e.clipboardData; if(!cd) return;
     var got=null, its=cd.items||[], i;
     for(i=0;i<its.length;i++){
@@ -1414,6 +1516,186 @@ else if (typeof exports === 'object')
     Array.prototype.forEach.call(pmGrid.querySelectorAll(".thumb"), function(t){ pmObserver.observe(t); });
   }
 
+  // ---------------- Preview & Arrange ----------------
+  // One large tile per file, dragged into merge order. The window edits a working copy of
+  // the order (arrOrder, a list of item ids); nothing reaches the table until Apply, so
+  // Cancel, the X and Escape all discard cleanly - the same pattern as Choose pages.
+  var arrOrder=null, arrSize="l", arrObserver=null, arrQueue=Promise.resolve();
+
+  function itemById(id){ for(var i=0;i<items.length;i++){ if(items[i].id===id) return items[i]; } return null; }
+
+  function arrPagesText(it){
+    if(it.pages==null) return "Could not read";
+    if(it.kind==="image") return "1 page";
+    var c=countSel(it);
+    if(c===0) return "No pages selected";
+    return c===it.pages ? c+(c===1 ? " page" : " pages") : c+" of "+it.pages+" pages";
+  }
+
+  // The page a PDF's tile shows: the first one that will actually be merged.
+  function arrPreviewIndex(it){ var s=selectedIndices(it); return s.length ? s[0] : 0; }
+
+  function arrPut(tile, url){
+    var pv=tile.querySelector(".apv"); if(!pv) return;
+    pv.innerHTML="";
+    var img=document.createElement("img"); img.alt=""; img.draggable=false; img.src=url;
+    pv.appendChild(img);
+  }
+
+  // Draws one tile's preview. PDF previews are cached on the item (and redrawn only if the
+  // first kept page has changed since), so reopening the window is quick.
+  function arrDraw(it, tile){
+    if(it.pages==null) return Promise.resolve();
+    if(it.kind==="image"){
+      if(!it.prevUrl) it.prevUrl = URL.createObjectURL(new Blob([it.bytes], {type:"image/jpeg"}));
+      arrPut(tile, it.prevUrl);
+      return Promise.resolve();
+    }
+    var idx=arrPreviewIndex(it);
+    if(it.arrPrev && it.arrPrev.page===idx){ arrPut(tile, it.arrPrev.url); return Promise.resolve(); }
+    return pmGetPdf(it).then(function(pdf){ return pdf.getPage(idx+1); }).then(function(page){
+      var vp0=page.getViewport({scale:1});
+      var vp=page.getViewport({scale: 640 / vp0.width});
+      var c=document.createElement("canvas");
+      c.width=Math.round(vp.width); c.height=Math.round(vp.height);
+      return page.render({canvasContext:c.getContext("2d"), viewport:vp}).promise.then(function(){
+        var url=c.toDataURL("image/jpeg", 0.8);
+        it.arrPrev={page:idx, url:url};
+        arrPut(tile, url);
+      });
+    }).catch(function(){
+      var pv=tile.querySelector(".apv");
+      if(pv) pv.innerHTML='<span class="abad">Preview not available</span>';
+    });
+  }
+
+  function arrClearMarks(){
+    Array.prototype.forEach.call(arrGrid.querySelectorAll(".drop-before,.drop-after"), function(el){
+      el.classList.remove("drop-before"); el.classList.remove("drop-after");
+    });
+  }
+  function arrNumber(){
+    Array.prototype.forEach.call(arrGrid.querySelectorAll(".atile"), function(t, i){
+      t.querySelector(".anum").textContent = i+1;
+    });
+  }
+
+  function arrTile(it){
+    var t=document.createElement("div");
+    t.className="atile"+(it.pages==null ? " bad" : "")+(it.pages!=null && countSel(it)===0 ? " none" : "");
+    t.draggable=true; t.dataset.id=it.id; t.title=it.name;
+    t.innerHTML='<span class="apv">'+(it.pages==null ? '<span class="abad">Could not read</span>' : '<span class="aph"></span>')+'</span>'+
+      '<span class="anum"></span>'+
+      '<span class="ameta">'+(it.kind==="image" ? imgIco() : pdfIco())+
+        '<span class="atext"><span class="aname"></span><span class="apages"></span></span></span>';
+    t.querySelector(".aname").textContent=it.name;
+    t.querySelector(".apages").textContent=arrPagesText(it);
+
+    t.addEventListener("dragstart", function(e){
+      arrDragId=it.id; t.classList.add("dragging");
+      e.dataTransfer.effectAllowed="move";
+      try{ e.dataTransfer.setData("text/plain", String(it.id)); }catch(_){}
+    });
+    t.addEventListener("dragend", function(){ arrDragId=null; t.classList.remove("dragging"); arrClearMarks(); });
+    // The bar goes on whichever side of this tile the pointer is nearer to.
+    t.addEventListener("dragover", function(e){
+      if(arrDragId==null) return;
+      e.preventDefault(); e.dataTransfer.dropEffect="move";
+      var r=t.getBoundingClientRect(), after=(e.clientX - r.left) > r.width/2;
+      arrClearMarks();
+      if(arrDragId!==it.id) t.classList.add(after ? "drop-after" : "drop-before");
+    });
+    t.addEventListener("drop", function(e){
+      if(arrDragId==null) return;
+      e.preventDefault(); e.stopPropagation();
+      var after=t.classList.contains("drop-after");
+      arrClearMarks();
+      if(arrDragId===it.id) return;
+      var from=arrOrder.indexOf(arrDragId); if(from<0) return;
+      arrOrder.splice(from,1);
+      var to=arrOrder.indexOf(it.id); if(to<0) return;
+      if(after) to++;
+      arrOrder.splice(to,0,arrDragId);
+      var moving=arrGrid.querySelector('.atile[data-id="'+arrDragId+'"]');
+      if(moving) arrGrid.insertBefore(moving, after ? t.nextSibling : t);
+      arrNumber();
+    });
+    return t;
+  }
+
+  // Previews are drawn one at a time as their tiles come into view.
+  function arrStartRender(){
+    function queue(it, tile){ arrQueue = arrQueue.then(function(){ return arrModal.hidden ? null : arrDraw(it, tile); }); }
+    var tiles=arrGrid.querySelectorAll(".atile");
+    if(typeof IntersectionObserver === "undefined"){
+      Array.prototype.forEach.call(tiles, function(t){ var it=itemById(Number(t.dataset.id)); if(it) queue(it, t); });
+      return;
+    }
+    arrObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        arrObserver.unobserve(en.target);
+        var it=itemById(Number(en.target.dataset.id));
+        if(it) queue(it, en.target);
+      });
+    }, {root: arrGrid, rootMargin: "400px 0px"});
+    Array.prototype.forEach.call(tiles, function(t){ arrObserver.observe(t); });
+  }
+
+  function arrPaintSizes(){
+    arrGrid.className = "arr-grid sz-" + arrSize;
+    Array.prototype.forEach.call(arrSizes.children, function(b){ b.classList.toggle("is-on", b.dataset.size===arrSize); });
+  }
+
+  function openArrange(){
+    if(busy || items.length<2) return;
+    arrOrder = items.map(function(x){ return x.id; });
+    arrGrid.innerHTML="";
+    items.forEach(function(it){ arrGrid.appendChild(arrTile(it)); });
+    arrPaintSizes();
+    arrNumber();
+    arrSub.textContent = items.length + " files · drag to set the merge order";
+    arrGrid.scrollTop = 0;
+    arrModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", arrKey);
+    arrStartRender();
+  }
+
+  function closeArrange(){
+    if(arrObserver){ try{ arrObserver.disconnect(); }catch(_){ } arrObserver=null; }
+    arrModal.hidden = true;
+    document.body.style.overflow = "";
+    document.removeEventListener("keydown", arrKey);
+    arrGrid.innerHTML = "";
+    arrOrder = null; arrDragId = null;
+    // Image previews hold a copy of the picture in memory; let it go until next time.
+    items.forEach(function(it){ if(it.prevUrl){ URL.revokeObjectURL(it.prevUrl); it.prevUrl=null; } });
+  }
+
+  function arrKey(e){ if(e.key === "Escape"){ e.preventDefault(); closeArrange(); } }
+
+  // Apply behaves exactly like dragging the rows: the table, the numbers and the order
+  // line follow the new order, and any merged result already built is cleared.
+  function applyArrange(){
+    if(!arrOrder) return;
+    var before = items.map(function(x){ return x.id; }).join(",");
+    var next = [];
+    arrOrder.forEach(function(id){ var it=itemById(id); if(it) next.push(it); });
+    items.forEach(function(it){ if(next.indexOf(it)<0) next.push(it); });   // nothing can go missing
+    var changed = next.map(function(x){ return x.id; }).join(",") !== before;
+    closeArrange();
+    if(changed){ items=next; mergedBlob=null; hideResult(); renderRows(); }
+  }
+
+  arrangeBtn.addEventListener("click", openArrange);
+  arrClose.addEventListener("click", closeArrange);
+  arrCancel.addEventListener("click", closeArrange);
+  arrApply.addEventListener("click", applyArrange);
+  Array.prototype.forEach.call(arrSizes.children, function(b){
+    b.addEventListener("click", function(){ arrSize = b.dataset.size; arrPaintSizes(); });
+  });
+
   function clearOver(){ Array.prototype.forEach.call(rows.querySelectorAll(".drag-over"), function(el){ el.classList.remove("drag-over"); }); }
 
   // Shift one file one place up (-1) or down (+1). Same effect as dragging it there,
@@ -1522,19 +1804,32 @@ else if (typeof exports === 'object')
     var n=items.length, ok=items.filter(function(x){ return x.pages!=null && countSel(x)>0; }).length;
     processedEl.hidden = n===0;
     fileCountEl.textContent = n + (n===1 ? " file added" : " files added");
+    // The button says what pressing it will actually do, judged on the files that will
+    // take part (readable, with at least one page selected):
+    //   images only (one or more)     -> "Create PDF"
+    //   2+ files, all PDFs            -> "Merge PDFs"
+    //   2+ files, PDFs and images     -> "Merge to PDF"
+    //   1 PDF, some pages deselected  -> "Create file"
+    //   1 PDF, all pages kept         -> "Compress"
     // One readable PDF is enough - there is nothing to merge, but it can still be
-    // trimmed to a page selection or compressed, so the button says which applies:
-    //   2+ files                      -> "Merge PDFs"
-    //   1 file, some pages deselected -> "Create file"
-    //   1 file, all pages kept        -> "Compress"
+    // trimmed to a page selection or compressed.
     mergeBtn.disabled = busy || ok<1;
-    if(ok===1){
-      var only = items.filter(function(x){ return x.pages!=null && countSel(x)>0; })[0];
+    var taking = items.filter(function(x){ return x.pages!=null && countSel(x)>0; });
+    var nImg = taking.filter(function(x){ return x.kind==="image"; }).length;
+    if(ok>=1 && nImg===ok){
+      mergeBtnLabel.textContent = "Create PDF";
+    } else if(ok===1){
+      var only = taking[0];
       var trimmed = only && countSel(only) < only.pages;
       mergeBtnLabel.textContent = trimmed ? "Create file" : "Compress";
+    } else if(nImg>0){
+      mergeBtnLabel.textContent = "Merge to PDF";
     } else {
       mergeBtnLabel.textContent = "Merge PDFs";
     }
+    // Preview & Arrange needs at least two things to put in order.
+    arrangeBtn.disabled = busy || n<2;
+    arrangeBtn.title = n<2 ? "Add two or more files to arrange them" : "See each file large and drag them into order";
     emptyHint.hidden = !(n>0 && ok<1);
     updateOrderNote();
   }
@@ -1702,9 +1997,9 @@ else if (typeof exports === 'object')
   }
 
   function setSub(size, wasSize){
-    var s = masterPages+" pages · <b>"+fmtSize(size)+"</b>";
+    var s = masterPages+(masterPages===1 ? " page" : " pages")+" · <b>"+fmtSize(size)+"</b>";
     if(wasSize!=null) s += " · was "+fmtSize(wasSize);
-    mrSub.innerHTML = masterFiles===1 ? s : (s + " · from "+masterFiles+" files");
+    mrSub.innerHTML = masterFiles===1 ? s : (s + " · from "+masterFiles+(masterFiles===1 ? " file" : " files"));
   }
 
   function paintPills(){
