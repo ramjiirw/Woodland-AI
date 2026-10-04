@@ -1,13 +1,18 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — PDF MERGE UTILITY
-  Build 2.5
+  Build 2.6
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop PDFs, JPGs and PNGs anywhere on the page (or paste a screenshot with Ctrl+V),
   drag the rows to set the order, and combine them into a single PDF. Each image
   becomes its own A4 page. Locked PDFs are unlocked automatically. The result can be
   compressed (None / Standard / Smaller) by recompressing the images inside it,
   which leaves text selectable and searchable.
+
+  2.6 changes:
+   - The rotate and magnifier buttons are now always visible, on every tile in Preview &
+     Arrange and on every page in Choose pages. They used to appear only while the
+     pointer was over the tile. They look and work exactly as before.
 
   2.5 changes:
    - Drag the page to move around it. In the magnifier, and in the full page view in
@@ -486,8 +491,7 @@
   .thumb.off .tick{background:#9aa5a0;}
   .zoom{position:absolute;top:7px;left:7px;width:24px;height:24px;border-radius:7px;
     background:rgba(255,255,255,.92);border:1px solid var(--line);color:var(--forest);
-    display:flex;align-items:center;justify-content:center;cursor:zoom-in;opacity:0;}
-  .thumb:hover .zoom,.zoom:focus-visible{opacity:1;}
+    display:flex;align-items:center;justify-content:center;cursor:zoom-in;}
   .zoom svg{width:14px;height:14px;display:block;}
 
   /* ---------- full page view (sits over the picker) ---------- */
@@ -550,9 +554,8 @@
   .atile .apages{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
   .atile.bad .aname{color:#8a2e22;}
   .atile.none .apv img{opacity:.45;}
-  /* tile tools: rotate + magnifier, top right, shown on hover */
-  .atools{position:absolute;top:9px;right:9px;display:flex;gap:6px;opacity:0;transition:opacity .12s ease;}
-  .atile:hover .atools,.atools:focus-within{opacity:1;}
+  /* tile tools: rotate + magnifier, top right, always visible */
+  .atools{position:absolute;top:9px;right:9px;display:flex;gap:6px;}
   .atool{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.95);border:1px solid var(--line);
     color:var(--forest);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
     box-shadow:0 1px 3px rgba(0,0,0,.12);}
@@ -566,8 +569,7 @@
   /* page picker: rotate button beside the magnifier */
   .prot{position:absolute;top:7px;left:36px;width:24px;height:24px;border-radius:7px;
     background:rgba(255,255,255,.92);border:1px solid var(--line);color:var(--forest);
-    display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;padding:0;}
-  .thumb:hover .prot,.prot:focus-visible{opacity:1;}
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
   .prot svg{width:14px;height:14px;display:block;}
 
   /* zoom controls in the full-size views */
@@ -653,7 +655,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">PDF MERGE UTILITY</span>
-    <a class="help" id="helpBtn" href="#" role="button" title="PDF Merge Utility — Build 2.5">
+    <a class="help" id="helpBtn" href="#" role="button" title="PDF Merge Utility — Build 2.6">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -813,7 +815,7 @@
     </section>
   </main>
 
-  <footer><span class="build">Build 2.5</span></footer>
+  <footer><span class="build">Build 2.6</span></footer>
 </div>
 
 <div class="modal help-modal" id="helpModal" hidden>
@@ -822,7 +824,7 @@
     <div class="modal-head">
       <span>
         <span class="pm-title" id="helpTitle">How to use the PDF Merge Utility</span>
-        <span class="pm-sub" id="helpSub">Build 2.5</span>
+        <span class="pm-sub" id="helpSub">Build 2.6</span>
       </span>
       <button class="pm-close" id="helpClose" type="button" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
@@ -845,7 +847,7 @@
         <li>Drag the rows in the table, or use the small up and down arrows beside each row.</li>
         <li><b>Preview &amp; Arrange</b> opens a large tile for each file so you can see what it is. Drag the tiles into
           order (left to right, then top to bottom) and press <b>Apply</b>. Cancel leaves the order as it was.</li>
-        <li>Hover over a tile and click the <b>magnifier</b> to see the file full size. For a PDF, Previous and Next step
+        <li>Click the <b>magnifier</b> on a tile to see the file full size. For a PDF, Previous and Next step
           through its pages. Pick a <b>zoom size</b> from 50% to 400% at the top, or hold <b>Ctrl</b> and use the
           mouse wheel; <b>Fit</b> returns to the width of the window. When the page is bigger than the window,
           <b>click and drag</b> it to move around.</li>
