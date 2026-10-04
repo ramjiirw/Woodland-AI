@@ -1,13 +1,21 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — PDF MERGE UTILITY
-  Build 2.2
+  Build 2.3
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop PDFs, JPGs and PNGs anywhere on the page (or paste a screenshot with Ctrl+V),
   drag the rows to set the order, and combine them into a single PDF. Each image
   becomes its own A4 page. Locked PDFs are unlocked automatically. The result can be
   compressed (None / Standard / Smaller) by recompressing the images inside it,
   which leaves text selectable and searchable.
+
+  2.3 changes:
+   - The magnifier's zoom is now a slider. 100% (the page fitted to the window width) sits
+     in the middle; the left half runs down to 50% and the right half up to 400%, each at
+     an even pace, so 200% is three-quarters of the way along. The page zooms live while
+     the slider is dragged and is redrawn sharp when it is let go. Fit jumps back to 100%.
+     The - and + buttons are replaced by the slider; the - and + keys, and 0 for Fit, still
+     work. Ctrl + mouse wheel over the page also zooms, and the slider follows.
 
   2.2 changes:
    - Magnifier in Preview & Arrange. Hovering over a tile shows a magnifier; clicking it
@@ -548,6 +556,8 @@
     border:0;border-left:1px solid var(--line);padding:6px 11px;cursor:pointer;min-width:34px;}
   .zoomctl button:first-child{border-left:0;}
   .zoomctl button:hover{background:#eef3f0;}
+  .zoomctl .zslide{display:flex;align-items:center;padding:0 10px;}
+  .zoomctl input[type=range]{width:200px;margin:0;accent-color:var(--forest);cursor:pointer;}
   .zoomctl .zv{font-size:12px;color:var(--muted);padding:0 10px;border-left:1px solid var(--line);
     font-variant-numeric:tabular-nums;min-width:52px;text-align:center;}
 
@@ -619,7 +629,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">PDF MERGE UTILITY</span>
-    <a class="help" id="helpBtn" href="#" role="button" title="PDF Merge Utility — Build 2.2">
+    <a class="help" id="helpBtn" href="#" role="button" title="PDF Merge Utility — Build 2.3">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -779,7 +789,7 @@
     </section>
   </main>
 
-  <footer><span class="build">Build 2.2</span></footer>
+  <footer><span class="build">Build 2.3</span></footer>
 </div>
 
 <div class="modal help-modal" id="helpModal" hidden>
@@ -788,7 +798,7 @@
     <div class="modal-head">
       <span>
         <span class="pm-title" id="helpTitle">How to use the PDF Merge Utility</span>
-        <span class="pm-sub" id="helpSub">Build 2.2</span>
+        <span class="pm-sub" id="helpSub">Build 2.3</span>
       </span>
       <button class="pm-close" id="helpClose" type="button" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
@@ -812,7 +822,8 @@
         <li><b>Preview &amp; Arrange</b> opens a large tile for each file so you can see what it is. Drag the tiles into
           order (left to right, then top to bottom) and press <b>Apply</b>. Cancel leaves the order as it was.</li>
         <li>Hover over a tile and click the <b>magnifier</b> to see the file full size. For a PDF, Previous and Next step
-          through its pages. Use <b>-</b> and <b>+</b> to zoom.</li>
+          through its pages. Drag the <b>zoom slider</b> (100% is in the middle) or hold <b>Ctrl</b> and use the
+          mouse wheel to zoom; <b>Fit</b> returns to the width of the window.</li>
         <li>The line above the table always says which file will come first and which last.</li>
       </ul>
 
@@ -880,9 +891,9 @@
         <span class="pv-state" id="avState"></span>
         <span class="pv-actions">
           <span class="zoomctl">
-            <button type="button" id="avOut" aria-label="Zoom out" title="Zoom out (-)">&minus;</button>
+            <span class="zslide"><input type="range" id="avSlider" min="0" max="100" step="1" value="50"
+              aria-label="Zoom" title="Zoom: 100% in the middle, 50% at the left, 400% at the right"></span>
             <span class="zv" id="avZoom">100%</span>
-            <button type="button" id="avIn" aria-label="Zoom in" title="Zoom in (+)">+</button>
             <button type="button" id="avFit" title="Fit to the window width (0)">Fit</button>
           </span>
           <button class="pm-close" id="avClose" type="button" aria-label="Back to files">
@@ -895,7 +906,7 @@
         <button class="pbtn" id="avPrev" type="button">Previous</button>
         <button class="pbtn" id="avNext" type="button">Next</button>
         <span class="spacer"></span>
-        <span class="pv-busy">Left and right arrow keys step through pages; - and + zoom.</span>
+        <span class="pv-busy">Left and right arrow keys step through pages; Ctrl + mouse wheel zooms.</span>
       </div>
     </div>
     <div class="modal-foot">
@@ -1260,7 +1271,7 @@ else if (typeof exports === 'object')
   var arrCancel=document.getElementById("arrCancel"), arrApply=document.getElementById("arrApply");
   var arrView=document.getElementById("arrView"), avBack=document.getElementById("avBack");
   var avLabel=document.getElementById("avLabel"), avState=document.getElementById("avState");
-  var avOut=document.getElementById("avOut"), avIn=document.getElementById("avIn"), avFit=document.getElementById("avFit");
+  var avSlider=document.getElementById("avSlider"), avFit=document.getElementById("avFit");
   var avZoom=document.getElementById("avZoom"), avClose=document.getElementById("avClose");
   var avBody=document.getElementById("avBody"), avPrev=document.getElementById("avPrev"), avNext=document.getElementById("avNext");
   var optImages=document.getElementById("optImages"), imgModePills=document.getElementById("imgModePills");
@@ -2015,8 +2026,7 @@ else if (typeof exports === 'object')
     avPrev.disabled = avPos<=0;
     avNext.disabled = avPos>=avList.length-1;
     avZoom.textContent = Math.round(avZoomF*100)+"%";                 // 100% = fitted to the window width
-    avOut.disabled = avZoomF<=AV_STEPS[0];
-    avIn.disabled = avZoomF>=AV_STEPS[AV_STEPS.length-1];
+    avSlider.value = zoomToPos(avZoomF);
   }
 
   function drawArrView(){
@@ -2069,9 +2079,43 @@ else if (typeof exports === 'object')
   avClose.addEventListener("click", closeArrView);
   avPrev.addEventListener("click", function(){ stepArrView(-1); });
   avNext.addEventListener("click", function(){ stepArrView(1); });
-  avIn.addEventListener("click", function(){ zoomArrView(1); });
-  avOut.addEventListener("click", function(){ zoomArrView(-1); });
   avFit.addEventListener("click", function(){ zoomArrView(0); });
+
+  // ---- zoom slider ----
+  // Slider position 0..100 with 100% zoom in the middle (50). Each half moves at an even
+  // pace: 0..50 runs 50% to 100%, 50..100 runs 100% to 400% (so 200% sits at 75).
+  var AV_MIN=0.5, AV_MAX=4;
+  function posToZoom(p){
+    p=Math.max(0, Math.min(100, Number(p)));
+    return p<=50 ? AV_MIN*Math.pow(1/AV_MIN, p/50) : Math.pow(AV_MAX, (p-50)/50);
+  }
+  function zoomToPos(z){
+    z=Math.max(AV_MIN, Math.min(AV_MAX, z));
+    return z<=1 ? 50*Math.log(z/AV_MIN)/Math.log(1/AV_MIN) : 50 + 50*Math.log(z)/Math.log(AV_MAX);
+  }
+  // While zooming continuously, the page already on screen is stretched straight away and
+  // then redrawn sharp a moment after the zooming stops.
+  var avSharpTimer=null;
+  function liveZoom(z, sharpAfter){
+    if(!avItem) return;
+    z=Math.max(AV_MIN, Math.min(AV_MAX, z));
+    if(Math.abs(z-1)<0.03) z=1;                       // settle on exactly 100% near the middle
+    avZoomF=z;
+    avZoom.textContent = Math.round(z*100)+"%";
+    var c=avBody.querySelector("canvas");
+    if(c){ var fitW=Math.max(300, (avBody.clientWidth || 1000) - 36); c.style.width = (fitW*z)+"px"; }
+    clearTimeout(avSharpTimer);
+    if(sharpAfter!=null) avSharpTimer=setTimeout(function(){ paintArrView(); drawArrView(); }, sharpAfter);
+  }
+  avSlider.addEventListener("input", function(){ liveZoom(posToZoom(avSlider.value), null); });
+  avSlider.addEventListener("change", function(){ liveZoom(posToZoom(avSlider.value), 0); });
+  avBody.addEventListener("wheel", function(e){
+    if(!e.ctrlKey || !avItem) return;               // plain wheel still scrolls the page
+    e.preventDefault();
+    var z = avZoomF * (e.deltaY < 0 ? 1.1 : 1/1.1);
+    liveZoom(z, 250);
+    avSlider.value = zoomToPos(avZoomF);
+  }, {passive:false});
 
   function arrKey(e){
     if(!arrView.hidden){
