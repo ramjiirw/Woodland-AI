@@ -1,10 +1,24 @@
 <!DOCTYPE html>
 <!--
   Woodland Applied Intelligence — BANK STATEMENT UTILITY
-  Build 2.0
+  Build 2.1
   Single self-contained file. Runs entirely in your browser. Nothing is uploaded.
   Drop bank-statement PDFs anywhere on the page; each page WITHOUT the phrase
   "BALANCE CARRIED FORWARD" is removed, and a trimmed copy (same filename) is returned.
+
+  2.1 changes:
+   - Sort button. A "Sort A-Z" button now sits in the results button row, just to the left
+     of Preview & Arrange. One press puts every statement in file-name order, A to Z;
+     numbers in names are compared as numbers, and capitals do not matter. For names with
+     the date written year first (e.g. "CMC Sinking Fund 2026-04-14 to 2026-05-13.pdf")
+     this is oldest first. When the list is already in A-Z order the button reads
+     "Sort Z-A" and a press reverses it (newest first). The label always shows what the
+     next press will do, so it also corrects itself after rows are moved by hand.
+   - The button appears once there are two or more statements. Sorting clears any merged
+     result in the same way as moving a row, so a merged file in the old order cannot be
+     downloaded by mistake. Row numbers, the arrows, the "first ... last" line and
+     Preview & Arrange all follow the new order.
+   - Help mentions the new button.
 
   2.0 changes:
    - Compact layout once statements are added. As soon as there is at least one file in
@@ -456,7 +470,7 @@
       <span class="wm"><span class="w">Woodland</span><span class="a">Applied Intelligence</span></span>
     </a>
     <span class="util-title">BANK STATEMENT UTILITY</span>
-    <a class="help" id="helpBtn" href="#" role="button" title="Bank Statement Utility — Build 2.0">
+    <a class="help" id="helpBtn" href="#" role="button" title="Bank Statement Utility — Build 2.1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.6 2.2-2.6 3.8"/><circle cx="12" cy="17.4" r=".6" fill="currentColor" stroke="none"/></svg>
       Help
     </a>
@@ -525,6 +539,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 20h14"/></svg>
             Download all
           </button>
+          <button class="btn-clear" id="sortBtn" type="button" hidden title="Put the statements in file-name order, A to Z">Sort A–Z</button>
           <button class="btn-clear" id="arrangeBtn" type="button" hidden disabled title="Add two or more statements to arrange them">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
             Preview &amp; Arrange
@@ -588,7 +603,7 @@
     </section>
   </main>
 
-  <footer><span class="build">Build 2.0</span></footer>
+  <footer><span class="build">Build 2.1</span></footer>
 </div>
 
 <!-- ======================= 2.0: Preview & Arrange ======================= -->
@@ -679,7 +694,7 @@
   <div class="modal-back"></div>
   <div class="modal-box help-box" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <span><span class="pm-title" id="helpTitle">How to use the Bank Statement Utility</span><span class="pm-sub">Build 2.0</span></span>
+      <span><span class="pm-title" id="helpTitle">How to use the Bank Statement Utility</span><span class="pm-sub">Build 2.1</span></span>
       <button class="pm-close" id="helpClose" type="button" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>
     </div>
     <div class="help-body">
@@ -722,6 +737,8 @@
           button reads <b>Compress</b>.</li>
         <li>Set the order by dragging the rows, with the small up and down arrows, or with <b>Preview &amp; Arrange</b>, which
           shows a large tile for each statement to drag into order (then <b>Apply</b>). Its tiles have the magnifier too.</li>
+        <li><b>Sort A–Z</b> puts every statement in file-name order in one press. If the dates in the names are written
+          year first (2026-04-14), that is oldest first. Press it again (it then reads <b>Sort Z–A</b>) to reverse the order.</li>
         <li>After merging, <b>Compress</b> (None, Standard, Smaller) shrinks the pictures inside the file; text stays sharp,
           selectable and searchable.</li>
       </ul>
@@ -1010,6 +1027,7 @@ else if (typeof exports === 'object')
   var mrcPills       = document.getElementById("mrcPills");
   var mrcNoteText    = document.getElementById("mrcNoteText");
   var arrangeBtn     = document.getElementById("arrangeBtn");
+  var sortBtn        = document.getElementById("sortBtn");      // 2.1
 
   var busy = false;
   var items = [];
@@ -1061,7 +1079,47 @@ else if (typeof exports === 'object')
     arrangeBtn.hidden = items.length < 1;
     arrangeBtn.disabled = busy || items.length < 2;
     arrangeBtn.title = items.length < 2 ? "Add two or more statements to arrange them" : "See each statement large and drag them into order";
+    updateSortBtn();
   }
+
+  // ---- 2.1: Sort A-Z / Z-A ----
+  // File-name order. Numbers inside names are compared as numbers ("2" before "10") and
+  // capitals do not matter. Year-first dates (2026-04-14) therefore come out oldest first.
+  function nameCompare(a, b){
+    return String(a.name || "").localeCompare(String(b.name || ""), "en-GB", {numeric:true, sensitivity:"base"});
+  }
+  function isSortedAZ(){
+    for(var i=1;i<items.length;i++){ if(nameCompare(items[i-1], items[i]) > 0) return false; }
+    return true;
+  }
+  function sortIco(desc){
+    var top = desc ? "Z" : "A", bot = desc ? "A" : "Z";
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M6 4v16"/><path d="M3 17l3 3 3-3"/>' +
+      '<text x="17" y="10.5" font-size="9" font-weight="700" font-family="sans-serif" fill="currentColor" stroke="none" text-anchor="middle">' + top + '</text>' +
+      '<text x="17" y="21" font-size="9" font-weight="700" font-family="sans-serif" fill="currentColor" stroke="none" text-anchor="middle">' + bot + '</text></svg>';
+  }
+  // The label always says what the NEXT press will do: if the list is already A-Z it
+  // offers Z-A, otherwise A-Z. Worked out from the list itself, so it stays right after
+  // rows are dragged, moved with the arrows, rearranged or added.
+  function updateSortBtn(){
+    sortBtn.hidden = items.length < 2;
+    sortBtn.disabled = busy;
+    var desc = items.length >= 2 && isSortedAZ();
+    sortBtn.dataset.dir = desc ? "desc" : "asc";
+    sortBtn.innerHTML = sortIco(desc) + (desc ? "Sort Z–A" : "Sort A–Z");
+    sortBtn.title = desc ? "Reverse the order: file names Z to A (newest first for year-first dates)"
+                         : "Put the statements in file-name order, A to Z (oldest first for year-first dates)";
+  }
+  sortBtn.addEventListener("click", function(){
+    if(busy || items.length < 2) return;
+    var desc = sortBtn.dataset.dir === "desc";
+    var before = items.map(function(x){ return x.id; }).join(",");
+    var next = items.slice().sort(function(a, b){ return desc ? nameCompare(b, a) : nameCompare(a, b); });
+    if(next.map(function(x){ return x.id; }).join(",") === before) return;   // already in that order
+    items = next;
+    hideResult(); renderRows(); updateButtons();
+  });
 
   // open file picker
   drop.addEventListener("click", function(){ if(!busy) fileInput.click(); });
@@ -1102,7 +1160,7 @@ else if (typeof exports === 'object')
     hideResult();
     renderRows();
     downloadAllBtn.hidden = true; clearAllBtn.hidden = true; processedEl.hidden = true;
-    mergeBtn.hidden = true; arrangeBtn.hidden = true;
+    mergeBtn.hidden = true; arrangeBtn.hidden = true; sortBtn.hidden = true;
     results.hidden = true;
   });
 
@@ -1222,6 +1280,7 @@ else if (typeof exports === 'object')
     rows.innerHTML = "";
     items.forEach(function(res, i){ rows.appendChild(buildRow(res, i)); });
     updateOrderNote();
+    updateSortBtn();                                                 // 2.1: keep the Sort label in step with the order
     document.body.classList.toggle("compact", items.length > 0);   // slim top of page once statements are in
   }
 
